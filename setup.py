@@ -70,6 +70,7 @@ setup(
     install_requires=[
         'numpy>=1.9.0',
         'matplotlib>=1.5.1',
+        'astroquery>=0.3.1'
     ],
 
     # List additional groups of dependencies here (e.g. development
