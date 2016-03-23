@@ -1,0 +1,6 @@
+target: NGC6543
+RA: 269.63926
+DEC: 66.63320
+companion1 PA: -
+companion1 sep: -
+mode: MIRI 2300 Lyot

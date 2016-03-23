@@ -1,0 +1,6 @@
+target: fomalhaut
+RA: 344.41269
+DEC: -29.62224
+companion1 PA: 325
+companion1 sep: 10
+mode: NIRCam A, 210R

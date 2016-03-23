@@ -1,0 +1,10 @@
+target: HR 8799
+RA: 346.86965
+DEC: 21.13425
+companion1 PA: 45
+companion1 sep: 1.7
+companion2 PA: 325
+companion2 sep: 1
+companion3 PA: 190
+companion3 sep: 0.65
+mode: MIRI 1065 4QPM
