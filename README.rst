@@ -13,7 +13,7 @@ We stress that the TVC is designed to provide quick illustrations of the possibl
 Using the GUI
 -------------
 
-After installation, the ``jwst_visibility_gui`` command will be available. Launch the GUI by executing this command.
+After installation, the ``jwst-visibility-gui`` command will be available. Launch the GUI by executing this command.
 
 In the GUI you will see a control panel on the left and a plot panel on the right. Within the control panel there are:
 

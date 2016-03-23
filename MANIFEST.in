@@ -1,0 +1,3 @@
+recursive-include jwst_visibility *.csv
+recursive-include jwst_visibility *.py
+recursive-include jwst_visibility *.txt
