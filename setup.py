@@ -69,7 +69,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'numpy>=1.9.0',
-        'matplotlib>=1.5.1',
+        'matplotlib>=1.4.2',
         'astroquery>=0.3.1'
     ],
 
