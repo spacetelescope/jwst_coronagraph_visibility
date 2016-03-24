@@ -794,10 +794,9 @@ class VisibilityCalculator(object):
         ax.clear()
         ax.set_aspect('equal')
 
-        props = list(matplotlib.rcParams['axes.prop_cycle'])
-        self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, **props[0])
-        self.c2_plot_group = ax.scatter(self.result.c2_x, self.result.c2_y, picker=True, **props[1])
-        self.c3_plot_group = ax.scatter(self.result.c3_x, self.result.c3_y, picker=True, **props[2])
+        self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, color=RED_GGPLOT)
+        self.c2_plot_group = ax.scatter(self.result.c2_x, self.result.c2_y, picker=True, color=BLUE_GGPLOT)
+        self.c3_plot_group = ax.scatter(self.result.c3_x, self.result.c3_y, picker=True, color=PURPLE_GGPLOT)
 
         ax.legend(
             (self.c1_plot_group, self.c2_plot_group, self.c3_plot_group),
