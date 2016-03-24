@@ -159,10 +159,12 @@ class VisibilityCalculator(object):
             self.root.destroy()
 
         self.root.protocol("WM_DELETE_WINDOW", close_app)
-        self.root.lift()
         self._build()
 
     def start(self):
+        self.root.lift()
+        self.root.call('wm', 'attributes', '.', '-topmost', True)
+        self.root.after_idle(self.root.call, 'wm', 'attributes', '.', '-topmost', False)
         self.root.mainloop()
 
     def error_modal(self, message):
