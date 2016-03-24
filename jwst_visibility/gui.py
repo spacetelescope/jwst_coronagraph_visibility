@@ -772,32 +772,19 @@ class VisibilityCalculator(object):
         n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
         n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
 
-        north_arrow = self.detector_ax.annotate(
-            "",
-            xy=(0.5 + 0.1 * n_x_temp, 0.5 + 0.1 * n_y_temp), # arrow to
-            xytext=(0, 0), # arrow from
-            arrowprops=dict(arrowstyle="->", edgecolor=RED_GGPLOT, linewidth=2),
-            xycoords="axes fraction",
-            textcoords="data"
-        )
-        self._plot_overlay_elements.append(north_arrow)
+        u = np.array([0, 1])
+        north_line, = self.detector_ax.plot(10 * n_x_temp * u, 10 * n_y_temp * u, color=RED_GGPLOT)
+        self._plot_overlay_elements.append(north_line)
 
-        north_label = self.detector_ax.text(0.5 + 0.1 * n_x_temp, 0.5 + 0.1 * n_y_temp, "N", transform=self.detector_ax.transAxes)
+        north_label = self.detector_ax.text(5 * n_x_temp, 5 * n_y_temp, "N")
         self._plot_overlay_elements.append(north_label)
 
         e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
         e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
 
-        east_arrow = self.detector_ax.annotate(
-            "",
-            xy=(0.5 + 0.1 * e_x_temp, 0.5 + 0.1 * e_y_temp), # arrow to
-            xytext=(0, 0), # arrow from
-            arrowprops=dict(arrowstyle="->", edgecolor=YELLOW_GGPLOT, linewidth=2),
-            xycoords="axes fraction",
-            textcoords="data"
-        )
-        self._plot_overlay_elements.append(east_arrow)
-        east_label = self.detector_ax.text(0.5 + 0.1 * e_x_temp, 0.5 + 0.1 * e_y_temp, "E", transform=self.detector_ax.transAxes)
+        east_line, = self.detector_ax.plot(10 * e_x_temp * u, 10 * e_y_temp * u, color=YELLOW_GGPLOT)
+        self._plot_overlay_elements.append(east_line)
+        east_label = self.detector_ax.text(5 * e_x_temp, 5 * e_y_temp, "E")
         self._plot_overlay_elements.append(east_label)
 
         self._canvas.show()
