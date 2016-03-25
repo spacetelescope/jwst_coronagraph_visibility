@@ -203,9 +203,10 @@ class VisibilityCalculator(object):
         self.main.grid(column=0, row=0, sticky=(N, W, E, S))
 
         # Target, companion, and detector controls
-        self.controls_frame = ttk.Frame(self.main)
+        self.controls_frame = ttk.Frame(self.main, width=200)
         self.controls_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         self._build_controls(self.controls_frame)
+        self.controls_frame.grid_propagate(False)
 
         # plot panel
         self.plot_frame = ttk.Frame(self.main)
@@ -217,7 +218,7 @@ class VisibilityCalculator(object):
             child.grid_configure(padx=5, pady=5)
 
         self.main.columnconfigure(1, weight=1)
-        self.main.columnconfigure(2, weight=1)
+
         self.main.rowconfigure(0, weight=1)
 
     def _build_controls(self, frame):
@@ -233,7 +234,7 @@ class VisibilityCalculator(object):
         companion_frame.grid_configure(pady=15)
 
         # Instrument/Mask selector
-        instrument_mask_frame = ttk.LabelFrame(frame, text="Instrument/Mask Selector")
+        instrument_mask_frame = ttk.Frame(frame)
         self._build_instrument_mask_controls(instrument_mask_frame)
         instrument_mask_frame.grid(column=0, row=2, sticky=(N, W, E, S))
         instrument_mask_frame.grid_configure(pady=15)
@@ -256,31 +257,32 @@ class VisibilityCalculator(object):
         )
         v3_pa_radio.grid(column=1, row=0)
         pa_control_frame.grid(column=0, row=3)
+
         # Update Plot
         self.update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
         self.update_button.grid(column=0, row=4, sticky=(E, W))
-        self.update_button.grid_configure(pady=30)
+        self.progress = ttk.Progressbar(frame, orient='horizontal', mode='indeterminate')
+        self.progress.grid(column=0, row=5, sticky=(E, W))
 
-        # TODO make this data driven or get rid of it
         examples_frame = ttk.LabelFrame(frame, text="Examples")
         self._build_examples_frame(examples_frame)
-        examples_frame.grid(column=0, row=5, sticky=(N, W, E, S))
+        examples_frame.grid(column=0, row=6, sticky=(W, E, S), pady=10)
         frame.columnconfigure(0, weight=1)
 
     def _build_examples_frame(self, frame):
         ttk.Button(
             frame,
-            text="Fomalhaut on NIRCam MASK210R",
+            text="Fomalhaut",
             command=self._ex_fomalhaut
         ).grid(column=0, row=0, sticky=(E, W))
         ttk.Button(
             frame,
-            text="1RXS J160929.1-210524 on NIRCam B MASKSWB",
+            text="1RXS J160929.1-210524",
             command=self._ex_1RXSJ160929p1_210524
         ).grid(column=0, row=1, sticky=(E, W))
         ttk.Button(
             frame,
-            text="HR 8799 on MIRI MASK1065",
+            text="HR 8799",
             command=self._ex_HR8799
         ).grid(column=0, row=2, sticky=(E, W))
 
@@ -311,6 +313,7 @@ class VisibilityCalculator(object):
         sep.set(0)
         self.instrument_value.set(self.NIRCAM_A)
         self.apername_value.set(apername)
+        self.simbad_id.set("Fomalhaut")
         self.update_plot()
 
     def _ex_1RXSJ160929p1_210524(self):
@@ -340,6 +343,7 @@ class VisibilityCalculator(object):
         sep.set(0)
         self.instrument_value.set(self.NIRCAM_B)
         self.apername_value.set(apername)
+        self.simbad_id.set("1RXS J160929.1-210524")
         self.update_plot()
 
     def _ex_HR8799(self):
@@ -370,6 +374,7 @@ class VisibilityCalculator(object):
 
         self.instrument_value.set(self.MIRI)
         self.apername_value.set(apername)
+        self.simbad_id.set("HR 8799")
         self.update_plot()
 
     def _build_simbad_lookup(self, frame):
@@ -395,14 +400,14 @@ class VisibilityCalculator(object):
         self.ra_value = StringVar()
         ra_entry = ttk.Entry(frame, textvariable=self.ra_value)
         ra_entry.grid(column=1, row=3, sticky=(N, W, E), columnspan=2)
-        ttk.Label(frame, text="degrees (decimal)").grid(column=3, row=3)
+        ttk.Label(frame, text="º (decimal)").grid(column=3, row=3)
 
         dec_label = ttk.Label(frame, text="Dec:")
         dec_label.grid(column=0, row=4, sticky=(N, W))
         self.dec_value = StringVar()
         dec_entry = ttk.Entry(frame, textvariable=self.dec_value)
         dec_entry.grid(column=1, row=4, sticky=(N, W, E), columnspan=2)
-        ttk.Label(frame, text="degrees (decimal)").grid(column=3, row=4)
+        ttk.Label(frame, text="º (decimal)").grid(column=3, row=4)
 
         # Clear the SIMBAD ID when user edits RA or Dec
         def _user_edited_coords(*args):
@@ -452,7 +457,7 @@ class VisibilityCalculator(object):
         frame.columnconfigure(2, weight=1)
 
     def _build_instrument_mask_controls(self, frame):
-        ttk.Label(frame, text="Instrument").grid(column=0, row=0)
+        ttk.Label(frame, text="Instrument", anchor=E).grid(column=0, row=0)
         self.instrument_value = StringVar(value=self.NIRCAM_A)
         instrument_combo = ttk.Combobox(
             frame,
@@ -461,13 +466,13 @@ class VisibilityCalculator(object):
             state='readonly'
         )
         instrument_combo.grid(
-            column=1,
-            row=0
+            column=0,
+            row=1
         )
 
         initial_apernames = self.INSTRUMENT_TO_APERNAMES[self.NIRCAM_A]
         self.apername_value = StringVar(value=initial_apernames[0])
-        ttk.Label(frame, text="Mask").grid(column=0, row=1)
+        ttk.Label(frame, text="Mask", anchor=E).grid(column=0, row=2)
         apername_combo = ttk.Combobox(
             frame,
             textvariable=self.apername_value,
@@ -475,8 +480,8 @@ class VisibilityCalculator(object):
             state='readonly'
         )
         apername_combo.grid(
-            column=1,
-            row=1
+            column=0,
+            row=3
         )
 
         # Hacks to prevent wonky looking text selection within readonly
@@ -505,10 +510,10 @@ class VisibilityCalculator(object):
         self._plot_overlay_elements = []
         self._mask_artist = None
 
-        obs_axes = (0.05, 0.05, 0.4, 0.9)  # (left, bottom, width, height)
+        obs_axes = (0.1, 0.1, 0.35, 0.8)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
 
-        detector_axes = (0.55, 0.3, 0.4, 0.65)
+        detector_axes = (0.55, 0.3, 0.4, 0.60)
         self.detector_ax = self.figure.add_axes(detector_axes)
         self.detector_ax.set_aspect('equal', anchor='SE')
 
@@ -630,6 +635,7 @@ class VisibilityCalculator(object):
 
         # busy cursor start
         self.update_button.config(state='disabled')
+        self.progress.start()
         self.root.config(cursor='wait')
         self.root.update()
 
@@ -656,11 +662,6 @@ class VisibilityCalculator(object):
         )
         self.result.calculate()
 
-        if self.simbad_id.get() == self.USER_SUPPLIED_COORDS_MSG:
-            self.figure.suptitle('Target at RA: {:3.5f} deg Dec: {:+3.5f} deg'.format(ra, dec))
-        else:
-            self.figure.suptitle('{} at RA: {:3.5f} deg Dec: {:+3.5f} deg'.format(self.simbad_id.get(), ra, dec))
-
         self._clear_plot_overlay()
         self._update_observability()
         if self._pick_event_handler_id is None:
@@ -668,6 +669,7 @@ class VisibilityCalculator(object):
         self._update_detector()
         self._canvas.show()
         # busy cursor end
+        self.progress.stop()
         self.update_button.config(state='normal')
         self.root.config(cursor='')
         self.root.update()
@@ -679,9 +681,14 @@ class VisibilityCalculator(object):
         observable = self.result.observable
         sciyangle = self.result.sciyangle
 
+
         ax = self.observability_ax
         ax.clear()
-        ax.set_title('Observability of target')
+        if self.simbad_id.get() == self.USER_SUPPLIED_COORDS_MSG:
+            ax.set_title('Observability of\nRA: {:3.5f} deg Dec: {:+3.5f} deg'.format(self.result.ra, self.result.dec))
+        else:
+            ax.set_title('Observability of {}'.format(self.simbad_id.get()))
+
         (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black', label='Solar elongation')  # same for all 20 roll angles?? pick first
 
         collapsed_mask = np.any(observable, axis=0)
