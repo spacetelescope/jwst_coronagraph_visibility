@@ -12,6 +12,7 @@ import os.path
 
 import matplotlib
 matplotlib.use('TkAgg')
+from matplotlib import patches
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
@@ -19,8 +20,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 # implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
-import numpy as np
 
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Polygon
+
+import numpy as np
 
 import astropy.coordinates as coord
 import astropy.units as u
@@ -186,7 +190,7 @@ class VisibilityCalculator(object):
         # improve visual feedback for entries in 'disabled' state
         self.style = ttk.Style()
         self.style.map(
-            'TEntry', 
+            'TEntry',
             background=[('disabled','#d9d9d9'),],
             foreground=[('disabled','#a3a3a3')]
         )
@@ -221,7 +225,7 @@ class VisibilityCalculator(object):
         simbad_frame = ttk.LabelFrame(frame, text="Target Location")
         self._build_simbad_lookup(simbad_frame)
         simbad_frame.grid(column=0, row=0, sticky=(N, W, E, S))
-        
+
         # Companions
         companion_frame = ttk.LabelFrame(frame, text="Companions")
         self._build_companion_controls(companion_frame)
@@ -398,7 +402,7 @@ class VisibilityCalculator(object):
         dec_entry = ttk.Entry(frame, textvariable=self.dec_value)
         dec_entry.grid(column=1, row=4, sticky=(N, W, E), columnspan=2)
         ttk.Label(frame, text="degrees (decimal)").grid(column=3, row=4)
-        
+
         # Clear the SIMBAD ID when user edits RA or Dec
         def _user_edited_coords(*args):
             self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
@@ -534,6 +538,7 @@ class VisibilityCalculator(object):
         # initialized when the plot is updated:
         self._pick_event_handler_id = None
         self._plot_overlay_elements = []
+        self._mask_artist = None
 
         self.observability_ax = self.figure.add_subplot(1, 2, 1)
         self.detector_ax = self.figure.add_subplot(1, 2, 2)
@@ -794,6 +799,7 @@ class VisibilityCalculator(object):
     def _update_detector(self):
         ax = self.detector_ax
         ax.clear()
+        self._mask_artist = None
         ax.set_aspect('equal')
 
         self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, color=RED_GGPLOT)
@@ -804,13 +810,81 @@ class VisibilityCalculator(object):
             (self.c1_plot_group, self.c2_plot_group, self.c3_plot_group),
             ('Companion 1', 'Companion 2', 'Companion 3')
         )
-        xmin, xmax = ax.get_xlim()
-        ymin, ymax = ax.get_ylim()
-        ax.set_xlim(min(xmin, ymin), max(xmax, ymax))
-        ax.set_ylim(min(xmin, ymin), max(xmax, ymax))
+
+        x_sci_size, y_sci_size = self.result.scisize
+        ax.set_xlim(-x_sci_size / 2, x_sci_size / 2)
+        ax.set_ylim(-y_sci_size / 2, y_sci_size / 2)
         ax.set_xlabel('x (pixels from center)')
         ax.set_ylabel('y (pixels from center)')
         ax.scatter(self.result.s_x, self.result.s_y, facecolor='yellow', edgecolor='black', marker='*', s=100)
+
+        self._overlay_mask(self.result.aperture.AperName)
+
+    def _overlay_mask(self, apername):
+        if self._mask_artist is not None:
+            self._mask_artist.remove()
+        arcsec_per_pixel = np.average(self.result.sciscale)  # avg of scale in x and y
+        x_sci_size, y_sci_size = self.result.scisize
+        if 'NRC' in apername and apername[-1] == 'R':
+            if '210R' in apername:
+                radius_arcsec = 0.40
+            elif '335R' in apername:
+                radius_arcsec = 0.64
+            elif '430R' in apername:
+                radius_arcsec = 0.82
+            else:
+                raise RuntimeError("Invalid mask!")
+            # make a circle
+            self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec / arcsec_per_pixel, alpha=0.5))
+        elif 'NRC' in apername:
+            if 'LWB' in apername:
+                thin_extent_arcsec = 0.58 * (2 / 4)
+                thick_extent_arcsec = 0.58 * (6 / 4)
+            elif 'SWB' in apername:
+                thin_extent_arcsec = 0.27 * (2 / 4)
+                thick_extent_arcsec = 0.27 * (6 / 4)
+            else:
+                raise RuntimeError("Invalid mask!")
+
+            x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
+            y_verts = np.array([
+                thin_extent_arcsec / arcsec_per_pixel,
+                thick_extent_arcsec / arcsec_per_pixel,
+                -thick_extent_arcsec / arcsec_per_pixel,
+                -thin_extent_arcsec / arcsec_per_pixel
+            ])
+            verts = np.concatenate([x_verts[:,np.newaxis], y_verts[:,np.newaxis]], axis=1)
+            patch = patches.Polygon(verts, alpha=0.5)
+            self._mask_artist = self.detector_ax.add_artist(patch)
+        elif 'MIRI' in apername:
+            y_angle = float(self.result.sciyangle)
+            if 'LYOT' in apername:
+                width_arcsec = 0.72
+                radius_arcsec = 2.16
+                circular_part = patches.Circle((0, 0), radius=radius_arcsec / arcsec_per_pixel)
+                x_verts = width_arcsec / arcsec_per_pixel * np.array([-1, -1, 1, 1])
+                y_verts = y_sci_size / 2 * np.array([-1, 1, 1, -1])
+                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
+                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+                verts = np.concatenate([x_verts_rot[:,np.newaxis], y_verts_rot[:,np.newaxis]], axis=1)
+                rectangular_part = patches.Polygon(verts)
+                mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
+                self._mask_artist = self.detector_ax.add_artist(mask_collection)
+            elif '1065' in apername or '1140' in apername or '1550' in apername:
+                width_arcsec = 0.33
+                x = x_sci_size / 2
+                y = y_sci_size / 2
+                maskwidth = width_arcsec / arcsec_per_pixel
+                x_verts = np.array([-x, -maskwidth, -maskwidth, maskwidth, maskwidth, x, x, maskwidth, maskwidth, -maskwidth, -maskwidth, -x])
+                y_verts = np.array([maskwidth, maskwidth, y, y, maskwidth, maskwidth, -maskwidth, -maskwidth, -y, -y, -maskwidth, -maskwidth])
+                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
+                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+                verts = np.concatenate([x_verts_rot[:,np.newaxis], y_verts_rot[:,np.newaxis]], axis=1)
+                mask = patches.Polygon(verts, alpha=0.5)
+                self._mask_artist = self.detector_ax.add_artist(mask)
+            else:
+                raise RuntimeError("Invalid mask!")
+
 
 def run():
     app = VisibilityCalculator()
