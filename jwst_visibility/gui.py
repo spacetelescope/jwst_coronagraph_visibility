@@ -695,7 +695,8 @@ class VisibilityCalculator(object):
             label='Observable Elongations'
         )
 
-        if self.pa_coords.get() == self.DETECTOR_PA:
+        self._last_plotted_pa = self.pa_coords.get()
+        if self._last_plotted_pa == self.DETECTOR_PA:
             # detector PA
             pa_label = 'Detector PA'
             pa_color = BLUE_GGPLOT
@@ -752,7 +753,9 @@ class VisibilityCalculator(object):
             (self.c2_plot_group, (self.result.c2_x, self.result.c2_y)),
             (self.c3_plot_group, (self.result.c3_x, self.result.c3_y)),
         )
-        for artist, (xarr, yarr) in companions:
+        for idx, (artist, (xarr, yarr)) in enumerate(companions):
+            if self.result.companions[idx]['separation'] == 0.0:
+                continue
             if artist == event.artist:
                 yidx, xidx = self.work_backwards(xarr, yarr, event.mouseevent.xdata, event.mouseevent.ydata)
                 self._add_plot_overlay(yidx, xidx)
@@ -762,27 +765,40 @@ class VisibilityCalculator(object):
         while len(self._plot_overlay_elements):
             elem = self._plot_overlay_elements.pop()
             elem.remove()
+        for text in self.companion_info:
+            text.set_text('')
 
     def _add_plot_overlay(self, yidx, xidx):
         obs_highlight = self.observability_ax.scatter(self._days_for_all_rolls[yidx, xidx], self._theta[yidx, xidx], color='white', edgecolor='black', s=100)
         self._plot_overlay_elements.append(obs_highlight)
-        obs_vline = self.observability_ax.axvline(self._days_for_all_rolls[yidx, xidx])
+        obs_vline = self.observability_ax.axvline(self._days_for_all_rolls[yidx, xidx], color=BLUE_GGPLOT)
         self._plot_overlay_elements.append(obs_vline)
-        obs_hline = self.observability_ax.axhline(self._theta[yidx, xidx])
+        obs_hline = self.observability_ax.axhline(self._theta[yidx, xidx], color=BLUE_GGPLOT)
         self._plot_overlay_elements.append(obs_hline)
+        if self._last_plotted_pa == self.DETECTOR_PA:
+            pa_label = 'Detector PA'
+        else:
+            pa_label = 'V3 PA'
 
-        if self.result.companions[0]['separation'] != 0.0:
-            c1_highlight = self.detector_ax.scatter(self.result.c1_x[yidx, xidx], self.result.c1_y[yidx, xidx], color='white', edgecolor='black', s=100)
-            self._plot_overlay_elements.append(c1_highlight)
-        if self.result.companions[1]['separation'] != 0.0:
-            c2_highlight = self.detector_ax.scatter(self.result.c2_x[yidx, xidx], self.result.c2_y[yidx, xidx], color='white', edgecolor='black', s=100)
-            self._plot_overlay_elements.append(c2_highlight)
-        if self.result.companions[2]['separation'] != 0.0:
-            c3_highlight = self.detector_ax.scatter(self.result.c3_x[yidx, xidx], self.result.c3_y[yidx, xidx], color='white', edgecolor='black', s=100)
-            self._plot_overlay_elements.append(c3_highlight)
+        self.observable_pa.set_text("{pa_label} = {pa:.2f} deg".format(
+            pa_label=pa_label,
+            pa=self._theta[yidx, xidx],
+        ))
+
+        for idx, companion in enumerate(self.result.companions):
+            if companion['separation'] == 0:
+                continue
+            c_x = getattr(self.result, 'c{}_x'.format(idx + 1))
+            c_y = getattr(self.result, 'c{}_y'.format(idx + 1))
+            x, y = c_x[yidx, xidx], c_y[yidx, xidx]
+            highlight = self.detector_ax.scatter(x, y, color='white', edgecolor='black', s=100)
+            self.companion_info[idx].set_text('{dist:.2f} pix @ {angle:.2f} deg'.format(
+                dist=np.sqrt(x**2 + y**2),
+                angle=np.rad2deg(np.arctan2(-x, y))
+            ))
+            self._plot_overlay_elements.append(highlight)
 
         scale_factor = (1/5) * np.average(self.result.scisize)
-
 
         n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
         n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
