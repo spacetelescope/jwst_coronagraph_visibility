@@ -776,22 +776,25 @@ class VisibilityCalculator(object):
             c3_highlight = self.detector_ax.scatter(self.result.c3_x[yidx, xidx], self.result.c3_y[yidx, xidx], color='white', edgecolor='black', s=100)
             self._plot_overlay_elements.append(c3_highlight)
 
+        scale_factor = (1/5) * np.average(self.result.scisize)
+
+
         n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
         n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
 
         u = np.array([0, 1])
-        north_line, = self.detector_ax.plot(10 * n_x_temp * u, 10 * n_y_temp * u, color=RED_GGPLOT)
+        north_line, = self.detector_ax.plot(scale_factor * n_x_temp * u, scale_factor * n_y_temp * u, color=RED_GGPLOT)
         self._plot_overlay_elements.append(north_line)
 
-        north_label = self.detector_ax.text(5 * n_x_temp, 5 * n_y_temp, "N")
+        north_label = self.detector_ax.text(scale_factor / 2 * n_x_temp, scale_factor / 2 * n_y_temp, "N")
         self._plot_overlay_elements.append(north_label)
 
         e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
         e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
 
-        east_line, = self.detector_ax.plot(10 * e_x_temp * u, 10 * e_y_temp * u, color=YELLOW_GGPLOT)
+        east_line, = self.detector_ax.plot(scale_factor * e_x_temp * u, scale_factor * e_y_temp * u, color=YELLOW_GGPLOT)
         self._plot_overlay_elements.append(east_line)
-        east_label = self.detector_ax.text(5 * e_x_temp, 5 * e_y_temp, "E")
+        east_label = self.detector_ax.text(scale_factor / 2 * e_x_temp, scale_factor / 2 * e_y_temp, "E")
         self._plot_overlay_elements.append(east_label)
 
         self._canvas.show()
