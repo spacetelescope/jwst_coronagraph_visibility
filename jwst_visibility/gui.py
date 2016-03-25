@@ -497,42 +497,6 @@ class VisibilityCalculator(object):
             self.apername_value.set(values[0])
         self.instrument_value.trace('w', _update_apernames)
 
-    def _build_observability(self, frame):
-        self.observability_figure = Figure(figsize=(8, 8), dpi=72)
-        self.observability_ax = self.observability_figure.add_subplot(1, 1, 1)
-
-        self._observability_canvas = FigureCanvasTkAgg(self.observability_figure, master=frame)
-        self._observability_canvas.show()
-        self._observability_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-        self._observability_toolbar = NavigationToolbar2TkAgg(self._observability_canvas, frame)
-        self._observability_toolbar.update()
-        self._observability_canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-
-        def on_key_event(event):
-            key_press_handler(event, self._observability_canvas, self._observability_toolbar)
-
-        self._observability_canvas.mpl_connect('key_press_event', on_key_event)
-
-    def _build_detector(self, frame):
-        self.detector_figure = Figure(figsize=(8, 8), dpi=72)
-        self.detector_ax = self.detector_figure.add_subplot(1, 1, 1)
-        self.detector_ax.set_aspect('equal')
-
-        self._detector_canvas = FigureCanvasTkAgg(self.detector_figure, master=frame)
-        self._detector_canvas.show()
-        self._detector_canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-        self._detector_toolbar = NavigationToolbar2TkAgg(self._detector_canvas, frame)
-        self._detector_toolbar.update()
-        self._detector_canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-
-        def on_key_event(event):
-            # print('you pressed %s' % event.key)
-            key_press_handler(event, self._detector_canvas, self._detector_toolbar)
-
-        self._detector_canvas.mpl_connect('key_press_event', on_key_event)
-
     def _build_plots(self, frame):
         self.figure = Figure(figsize=(8, 8), dpi=72)
 
