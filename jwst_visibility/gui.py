@@ -540,8 +540,10 @@ class VisibilityCalculator(object):
         self._plot_overlay_elements = []
         self._mask_artist = None
 
-        self.observability_ax = self.figure.add_subplot(1, 2, 1)
-        self.detector_ax = self.figure.add_subplot(1, 2, 2)
+        obs_axes = (0.05, 0.05, 0.4, 0.9)  # (left, bottom, width, height)
+        self.observability_ax = self.figure.add_axes(obs_axes)
+        detector_axes = (0.55, 0.15, 0.4, 0.8)
+        self.detector_ax = self.figure.add_axes(detector_axes)
         self.detector_ax.set_aspect('equal')
 
         self._canvas = FigureCanvasTkAgg(self.figure, master=frame)
