@@ -257,8 +257,9 @@ class VisibilityCalculator(object):
         v3_pa_radio.grid(column=1, row=0)
         pa_control_frame.grid(column=0, row=3)
         # Update Plot
-        update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
-        update_button.grid(column=0, row=4, sticky=(E, W))
+        self.update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
+        self.update_button.grid(column=0, row=4, sticky=(E, W))
+        self.update_button.grid_configure(pady=30)
 
         # TODO make this data driven or get rid of it
         examples_frame = ttk.LabelFrame(frame, text="Examples")
@@ -596,8 +597,18 @@ class VisibilityCalculator(object):
                 sep_entry.config(state="disabled")
 
     def update_plot(self):
-        ra = float(self.ra_value.get())
-        dec = float(self.dec_value.get())
+        try:
+            ra = float(self.ra_value.get())
+            dec = float(self.dec_value.get())
+        except ValueError:
+            self.error_modal("RA and Declination must be given in decimal degrees")
+            return
+        if ra > 360 or ra < 0:
+            self.error_modal("RA must be between 0 and 360 degrees")
+            return
+        if dec > 90 or dec < -90:
+            self.error_modal("Declination must be between -90 and 90 degrees")
+            return
 
         # ugly loop unroll for the 3 companions
         shown, pa, sep = self.companions[0]
@@ -629,6 +640,11 @@ class VisibilityCalculator(object):
             instrname = 'MIRI'
         apername = self.apername_value.get()
 
+        # busy cursor start
+        self.update_button.config(state='disabled')
+        self.root.config(cursor='wait')
+        self.root.update()
+
         # TODO we want to eventually pass jwxml.Aperture instances into the calculation
         siaf_path = os.path.join(os.path.dirname(__file__), 'data', '{}_SIAF.xml'.format(instrname))
         assert os.path.exists(siaf_path), 'no SIAF for {}'.format(instrname)
@@ -650,9 +666,6 @@ class VisibilityCalculator(object):
             npoints,
             nrolls
         )
-        # busy cursor start
-        self.root.config(cursor='wait')
-        self.root.update()
         self.result.calculate()
 
         if self.simbad_id.get() == self.USER_SUPPLIED_COORDS_MSG:
@@ -667,6 +680,7 @@ class VisibilityCalculator(object):
         self._update_detector()
         self._canvas.show()
         # busy cursor end
+        self.update_button.config(state='normal')
         self.root.config(cursor='')
         self.root.update()
 
