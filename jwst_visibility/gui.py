@@ -543,9 +543,33 @@ class VisibilityCalculator(object):
 
         obs_axes = (0.05, 0.05, 0.4, 0.9)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
-        detector_axes = (0.55, 0.15, 0.4, 0.8)
+
+        detector_axes = (0.55, 0.3, 0.4, 0.65)
         self.detector_ax = self.figure.add_axes(detector_axes)
-        self.detector_ax.set_aspect('equal')
+        self.detector_ax.set_aspect('equal', anchor='SE')
+
+        # companion legend markers
+        self.companion_legend_markers = []
+        self.companion_legend_labels = []
+        self.companion_info = []
+        v_pos = 0.2
+        self.observable_pa = matplotlib.text.Text(x=0.55, y=v_pos, text="PA:", transform=self.figure.transFigure, figure=self.figure)
+        self.figure.texts.append(self.observable_pa)
+
+        line_height = 0.04
+        for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
+            v_pos -= line_height
+            marker = matplotlib.patches.Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color, transform=self.figure.transFigure, figure=self.figure)
+            self.figure.patches.append(marker)
+            self.companion_legend_markers.append(marker)
+
+            label = matplotlib.text.Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure, figure=self.figure)
+            self.figure.texts.append(label)
+            self.companion_legend_labels.append(label)
+
+            info = matplotlib.text.Text(x=0.57, y=v_pos - line_height / 2, text="# pix @ # deg", transform=self.figure.transFigure, figure=self.figure)
+            self.figure.texts.append(info)
+            self.companion_info.append(info)
 
         self._canvas = FigureCanvasTkAgg(self.figure, master=frame)
         self._canvas.show()
@@ -693,6 +717,7 @@ class VisibilityCalculator(object):
 
         ax = self.observability_ax
         ax.clear()
+        ax.set_title('Observability of target')
         (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black', label='Solar elongation')  # same for all 20 roll angles?? pick first
 
         collapsed_mask = np.any(observable, axis=0)
@@ -818,17 +843,18 @@ class VisibilityCalculator(object):
     def _update_detector(self):
         ax = self.detector_ax
         ax.clear()
+        ax.set_title('{name}\n({x_size:.0f} x {y_size:.0f} pixels, {scale:1.4f} arcsec/pixel)'.format(
+            name=self.result.aperture.AperName,
+            x_size=self.result.aperture.XSciSize,
+            y_size=self.result.aperture.YSciSize,
+            scale=np.average((self.result.aperture.XSciScale, self.result.aperture.YSciScale)),
+        ))
         self._mask_artist = None
         ax.set_aspect('equal')
 
         self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, color=RED_GGPLOT)
         self.c2_plot_group = ax.scatter(self.result.c2_x, self.result.c2_y, picker=True, color=BLUE_GGPLOT)
         self.c3_plot_group = ax.scatter(self.result.c3_x, self.result.c3_y, picker=True, color=PURPLE_GGPLOT)
-
-        ax.legend(
-            (self.c1_plot_group, self.c2_plot_group, self.c3_plot_group),
-            ('Companion 1', 'Companion 2', 'Companion 3')
-        )
 
         x_sci_size, y_sci_size = self.result.scisize
         ax.set_xlim(-x_sci_size / 2, x_sci_size / 2)
