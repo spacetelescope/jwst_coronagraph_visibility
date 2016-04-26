@@ -9,6 +9,7 @@ except ImportError:
     from Tkinter import *
     import ttk
 import os.path
+import datetime
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -44,13 +45,25 @@ GREEN_GGPLOT = '#8EBA42'
 PINK_GGPLOT = '#FFB5B8'
 
 class VisibilityCalculation(object):
-    def __init__(self, ra, dec, companions, aperture, npoints, nrolls):
+    def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
         self.ra = ra
         self.dec = dec
         self.companions = companions
         self.aperture = aperture
         self.npoints = npoints
         self.nrolls = nrolls
+        self.start_date = start_date
+
+        # compute ecliptic longitude of sun on start_date
+        # https://en.wikipedia.org/wiki/Position_of_the_Sun#Ecliptic_coordinates
+        n_days = (start_date - datetime.date(2000, 1, 1)).days
+        mean_longitude = 280.460 + 0.9856003 * n_days
+        mean_anomaly = 357.528 + 0.9856003 * n_days
+        lambda_sun = mean_longitude + 1.915 * np.sin(mean_anomaly) + 0.020 * np.sin(2 * mean_anomaly)
+        # Per Chris Stark:
+        # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
+        # > So it should be 90 deg W of the solar longitude.
+        self.lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
         # Outputs
         self.x = None
@@ -99,6 +112,7 @@ class VisibilityCalculation(object):
             # TODO pass Aperture object instead of instrument + apername
             instrname=self.aperture.instrument,
             apername=self.aperture.AperName,
+            lambda_rad0=self.lambda_rad0,
             npoints=self.npoints,
             nrolls=self.nrolls
         )
@@ -154,6 +168,8 @@ class VisibilityCalculator(object):
     DETECTOR_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
+    START_DATE = datetime.date(2018, 10, 1)
+
     def __init__(self):
         self.root = Tk()
         self.root.title("JWST Visibility Calculator")
@@ -203,7 +219,7 @@ class VisibilityCalculator(object):
         self.main.grid(column=0, row=0, sticky=(N, W, E, S))
 
         # Target, companion, and detector controls
-        self.controls_frame = ttk.Frame(self.main, width=200)
+        self.controls_frame = ttk.Frame(self.main, width=210)
         self.controls_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         self._build_controls(self.controls_frame)
         self.controls_frame.grid_propagate(False)
@@ -510,10 +526,10 @@ class VisibilityCalculator(object):
         self._plot_overlay_elements = []
         self._mask_artist = None
 
-        obs_axes = (0.1, 0.1, 0.35, 0.8)  # (left, bottom, width, height)
+        obs_axes = (0.1, 0.3, 0.35, 0.6)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
 
-        detector_axes = (0.55, 0.3, 0.4, 0.60)
+        detector_axes = (0.55, 0.3, 0.4, 0.6)
         self.detector_ax = self.figure.add_axes(detector_axes)
         self.detector_ax.set_aspect('equal', anchor='SE')
 
@@ -657,6 +673,7 @@ class VisibilityCalculator(object):
                 {'pa': pa3, 'separation': separation_as3},
             ],
             aper,
+            self.START_DATE,
             npoints,
             nrolls
         )
@@ -729,12 +746,16 @@ class VisibilityCalculator(object):
 
         ax.set_xlim(0, 366)
         ax.set_xlabel('Days since Oct 1 2018')
-        ax.legend(
+        legend = ax.legend(
             (elongation_line, observable_series, self._pa_series),
-            ('Solar elongation', 'Observable elongations', pa_label)
+            ('Solar elongation', 'Observable elongations', pa_label),
+            bbox_to_anchor=(0.1, 0.1, 0.36, .102),
+            bbox_transform=self.figure.transFigure,
+            mode="expand", borderaxespad=0.,
+            framealpha=0.0,
         )
 
-        ax.set_ylim(0, 360)
+        ax.set_ylim(0, 400)
         ax.set_ylabel('Degrees')
 
     def work_backwards(self, x_array, y_array, xdata, ydata):

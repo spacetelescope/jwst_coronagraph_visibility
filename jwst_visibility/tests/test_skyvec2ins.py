@@ -5,6 +5,8 @@ from .. import skyvec2ins
 
 NPOINTS = 360
 NROLLS = 20
+MAXVROLL = 10.0
+LAMBDA_RAD0 = np.deg2rad(191.05)
 
 def _load_test_case(test_case_name):
     case_path = abspath(join(dirname(__file__), 'targets', test_case_name))
@@ -95,8 +97,10 @@ def test_fomalhaut():
         separation_as3=0,
         instrname='NIRCam',
         apername='NRCA2_MASK210R',
+        lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
-        nrolls=NROLLS
+        nrolls=NROLLS,
+        maxvroll=MAXVROLL,
     )
     _compare_outputs(reference, computed)
 
@@ -113,8 +117,10 @@ def test_1RXSJ160929p1_210524():
         separation_as3=0,
         instrname='NIRCam',
         apername='NRCB3_MASKSWB',
+        lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
-        nrolls=NROLLS
+        nrolls=NROLLS,
+        maxvroll=MAXVROLL,
     )
     _compare_outputs(reference, computed)
 
@@ -131,8 +137,10 @@ def test_HR8799():
         separation_as3=0.65,
         instrname='MIRI',
         apername='MIRIM_MASK1065',
+        lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
-        nrolls=NROLLS
+        nrolls=NROLLS,
+        maxvroll=MAXVROLL,
     )
     _compare_outputs(reference, computed)
 
@@ -149,7 +157,9 @@ def test_NGC6543():
         separation_as3=0,
         instrname='MIRI',
         apername='MIRIM_MASKLYOT',
+        lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
-        nrolls=NROLLS
+        nrolls=NROLLS,
+        maxvroll=MAXVROLL,
     )
     _compare_outputs(reference, computed)

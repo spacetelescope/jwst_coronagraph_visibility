@@ -109,7 +109,7 @@ def _tenv(dd, mm, ss):
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
 def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
-               separation_as3, instrname, apername, npoints=360, nrolls=20):
+               separation_as3, instrname, apername, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
     """
     ;---------------------
     ; INPUTS
@@ -120,6 +120,11 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     ;separation_as1 - separation_as3 = separation of companions 1 - 3 in arcseconds  
     ;instrname = name of instrument
     ;apername = name of SIAF aperture
+    lambda_rad0 = ecliptic longitude of quadrature with the sun, in radians, at the beginning of the year-long interval sampled (indirectly, this specifies the start date)
+    (via Chris Stark: "lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.  So it should be 90 deg W of the solar longitude")
+    ;npoints = # of elongations calculated, default 360
+    ;nrolls = # of roll angles calculated, default 20
+    maxvroll = degrees max V roll to consider (not max allowable), default 7.0
 
     ;---------------------
     ; OUTPUTS
@@ -130,8 +135,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     ;roll_rad = 2D array, v3 PA in radians
     ;s_x, s_y = 2D array, stellar location on detector in pix
     ;c#_x, c#_y = 2D array, companion locations on detector in pix
-    ;npoints = # of elongations calculated
-    ;nrolls = # of roll angles calculated
+
     ;scisize = dimension of science aperture in pix
     ;sciscale = scale of science aperture in arcsec / pix
     ;n_x, n_y = north vector in science frame
@@ -139,10 +143,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     """
 
     # Constants
-    maxvroll = 10.  # degrees
     hours2deg = 360. / 24.
     deg2rad = np.pi / 180.
-    lambda_rad0 = 191.05 * deg2rad  # longitude of quadrature at a given date in radians (Feb 1 2014 = 190, Oct 1 2018 = -83)--this can be changed
     obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
 
     # Conversions
