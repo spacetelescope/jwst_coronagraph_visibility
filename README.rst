@@ -10,6 +10,8 @@ The allowed pointing of JWST leads to target visibility that depends on ecliptic
 
 We stress that the TVC is designed to provide quick illustrations of the possible observable orientations for a given target. As such, the TVC rapidly approximates JWST’s pointing restrictions and **does not query the official JWST Proposal Constraint Generator (PCG)**. The TVC does not include detailed pointing restrictions like Earth and Moon avoidance, etc. Additionally, results may differ from official constraints by a degree or so. **Users should treat the results as close approximations.**
 
+Additionally, detector geometry (e.g. conversion from companion PA to detector pixel positions) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (April 2016), the code includes its own copies of the `PRDDEVSOC-D-012` version of the NIRCam and MIRI SIAFs.
+
 Using the GUI
 -------------
 
