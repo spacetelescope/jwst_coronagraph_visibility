@@ -92,10 +92,10 @@ def lb2ad(lambda_rad, beta_rad):
 
     See Eq 4 in Leinert et al. 1998
     """
-    
+
     obliq = _tenv(23, 26, 21.45)     # J2000 obliquity of Earth in degrees
     obliq *= np.pi / 180.
-    
+
     delta = np.arcsin(np.sin(beta_rad) * np.cos(obliq) + np.cos(beta_rad) * np.sin(obliq) * np.sin(lambda_rad))
     cosalpha = np.cos(lambda_rad) * np.cos(beta_rad) / np.cos(delta)
     sinalpha = (-np.sin(beta_rad) * np.sin(obliq) + np.cos(beta_rad) * np.cos(obliq) * np.sin(lambda_rad)) / np.cos(delta)
@@ -117,7 +117,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     ;ra = right ascension of target in decimal degrees
     ;dec = declination of target in decimal degrees
     ;pa1 - pa3 = position angle of companions 1 - 3 in degrees
-    ;separation_as1 - separation_as3 = separation of companions 1 - 3 in arcseconds  
+    ;separation_as1 - separation_as3 = separation of companions 1 - 3 in arcseconds
     ;instrname = name of instrument
     ;apername = name of SIAF aperture
     lambda_rad0 = ecliptic longitude of quadrature with the sun, in radians, at the beginning of the year-long interval sampled (indirectly, this specifies the start date)
@@ -167,7 +167,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     scisize = [aper.XSciSize, aper.YSciSize]  # save this info to an output
     sciscale = [aper.XSciScale, aper.YSciScale]  # save this info to an output
     sciyangle = aper.V3SciYAngle
-  
+
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
@@ -359,7 +359,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
             Nvec_a[:, j, i] = Nvec  # just for making this the right shape to go with npoints and nrolls
     # Subtract off the unit vector pointing to the star to determine the direction of the E vector at the star
     Evec = unit_vec3 - unit_vec
-    Evec /= np.sqrt(np.sum(Evec * Evec))  # make it a unit vector  
+    Evec /= np.sqrt(np.sum(Evec * Evec))  # make it a unit vector
     Evec_a = np.zeros((3, nrolls, npoints))  # make it a npoints x nrolls x 3 array
     for i in range(npoints):
         for j in range(nrolls):
@@ -399,11 +399,11 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     # The target & PA reference points are specified relative to North.
     # So do this, we rotate the points by the the V3 PA, which is measured
     # relative to North. Then we shift them to the (V2,V3) location of the coronagraph center.
-    # 
+    #
     # BEGIN DETECTOR COORDS TRANSFORM SECTION
 
-    # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of 
-    # companions relative to stars. This can be added to [ra,dec] of 
+    # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
+    # companions relative to stars. This can be added to [ra,dec] of
     # stars to get absolute positions (approximately)
 
     # tiny offset in north and east so they can be rotated identically to companions for plotting
@@ -552,7 +552,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
 
     observable = np.zeros((nrolls, npoints), dtype=bool)
 
-    # sun pitch constrained to -45 to +5.2 
+    # sun pitch constrained to -45 to +5.2
     mask = np.where(
         (spitch < 2.5) &
         (spitch >= -45.) &
