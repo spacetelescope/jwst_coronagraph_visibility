@@ -494,18 +494,18 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
             refidlcoords3[j, i] = tempidlcoords3
 
     # Detector coordinates of star and companion
-    s_x = targidlcoords[:, :, 0] - coridlcoords[0]
-    s_y = targidlcoords[:, :, 1] - coridlcoords[1]
-    c1_x = refidlcoords1[:, :, 0] - coridlcoords[0]
-    c1_y = refidlcoords1[:, :, 1] - coridlcoords[1]
-    c2_x = refidlcoords2[:, :, 0] - coridlcoords[0]
-    c2_y = refidlcoords2[:, :, 1] - coridlcoords[1]
-    c3_x = refidlcoords3[:, :, 0] - coridlcoords[0]
-    c3_y = refidlcoords3[:, :, 1] - coridlcoords[1]
-    n_x = refidlcoordsN[:, :, 0] - coridlcoords[0]
-    n_y = refidlcoordsN[:, :, 1] - coridlcoords[1]
-    e_x = refidlcoordsE[:, :, 0] - coridlcoords[0]
-    e_y = refidlcoordsE[:, :, 1] - coridlcoords[1]
+    s_x = targidlcoords[:, :, 0]
+    s_y = targidlcoords[:, :, 1]
+    c1_x = refidlcoords1[:, :, 0]
+    c1_y = refidlcoords1[:, :, 1]
+    c2_x = refidlcoords2[:, :, 0]
+    c2_y = refidlcoords2[:, :, 1]
+    c3_x = refidlcoords3[:, :, 0]
+    c3_y = refidlcoords3[:, :, 1]
+    n_x = refidlcoordsN[:, :, 0]
+    n_y = refidlcoordsN[:, :, 1]
+    e_x = refidlcoordsE[:, :, 0]
+    e_y = refidlcoordsE[:, :, 1]
 
     # END OF DETECTOR POS SECTION
 

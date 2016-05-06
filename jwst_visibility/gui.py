@@ -696,9 +696,6 @@ class VisibilityCalculator(object):
         elongation_rad = self.result.elongation_rad
         roll_rad = self.result.roll_rad
         observable = self.result.observable
-        sciyangle = self.result.sciyangle
-
-
         ax = self.observability_ax
         ax.clear()
         if self.simbad_id.get() == self.USER_SUPPLIED_COORDS_MSG:
@@ -724,7 +721,9 @@ class VisibilityCalculator(object):
             # detector PA
             pa_label = 'Detector PA'
             pa_color = BLUE_GGPLOT
-            theta = np.rad2deg(roll_rad + sciyangle)
+            # theta = np.rad2deg(roll_rad + sciyangle)
+            # n.b. sciyangle is incorrect in PRDSOCDEV 012
+            theta = np.rad2deg(np.arctan2(self.result.n_x, self.result.n_y))
         else:
             # v3 PA
             pa_label = 'V3 PA'
@@ -851,24 +850,29 @@ class VisibilityCalculator(object):
     def _update_detector(self):
         ax = self.detector_ax
         ax.clear()
+        arcsec_per_pixel = np.average(self.result.sciscale)  # avg of scale in x and y
         ax.set_title('{name}\n({x_size:.0f} x {y_size:.0f} pixels, {scale:1.4f} arcsec/pixel)'.format(
             name=self.result.aperture.AperName,
             x_size=self.result.aperture.XSciSize,
             y_size=self.result.aperture.YSciSize,
-            scale=np.average((self.result.aperture.XSciScale, self.result.aperture.YSciScale)),
+            scale=arcsec_per_pixel,
         ))
         self._mask_artist = None
         ax.set_aspect('equal')
+
+        aper_corners_x, aper_corners_y = self.result.aperture.corners(frame='Idl')
+        verts = np.concatenate([aper_corners_x[:,np.newaxis], aper_corners_y[:,np.newaxis]], axis=1)
+        patch = patches.Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
+        ax.add_artist(patch)
 
         self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, color=RED_GGPLOT)
         self.c2_plot_group = ax.scatter(self.result.c2_x, self.result.c2_y, picker=True, color=BLUE_GGPLOT)
         self.c3_plot_group = ax.scatter(self.result.c3_x, self.result.c3_y, picker=True, color=PURPLE_GGPLOT)
 
-        x_sci_size, y_sci_size = self.result.scisize
-        ax.set_xlim(-x_sci_size / 2, x_sci_size / 2)
-        ax.set_ylim(-y_sci_size / 2, y_sci_size / 2)
-        ax.set_xlabel('x (pixels from center)')
-        ax.set_ylabel('y (pixels from center)')
+        ax.set_xlim(np.min(aper_corners_x) - 5, np.max(aper_corners_x) + 5)
+        ax.set_ylim(np.min(aper_corners_y) - 5, np.max(aper_corners_y) + 5)
+        ax.set_xlabel('x (arcsec, ideal frame)')
+        ax.set_ylabel('y (arcsec, ideal frame)')
         ax.scatter(self.result.s_x, self.result.s_y, facecolor='yellow', edgecolor='black', marker='*', s=100)
 
         self._overlay_mask(self.result.aperture.AperName)
@@ -878,6 +882,7 @@ class VisibilityCalculator(object):
             self._mask_artist.remove()
         arcsec_per_pixel = np.average(self.result.sciscale)  # avg of scale in x and y
         x_sci_size, y_sci_size = self.result.scisize
+        aperture = self.result.aperture
         if 'NRC' in apername and apername[-1] == 'R':
             if '210R' in apername:
                 radius_arcsec = 0.40
@@ -888,7 +893,7 @@ class VisibilityCalculator(object):
             else:
                 raise RuntimeError("Invalid mask!")
             # make a circle
-            self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec / arcsec_per_pixel, alpha=0.5))
+            self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
         elif 'NRC' in apername:
             if 'LWB' in apername:
                 thin_extent_arcsec = 0.58 * (2 / 4)
@@ -906,21 +911,25 @@ class VisibilityCalculator(object):
                 -thick_extent_arcsec / arcsec_per_pixel,
                 -thin_extent_arcsec / arcsec_per_pixel
             ])
-            verts = np.concatenate([x_verts[:,np.newaxis], y_verts[:,np.newaxis]], axis=1)
+            x_idl_verts, y_idl_verts = aperture.Sci2Idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
+            verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
             patch = patches.Polygon(verts, alpha=0.5)
             self._mask_artist = self.detector_ax.add_artist(patch)
         elif 'MIRI' in apername:
-            y_angle = float(self.result.sciyangle)
+            y_angle = float(aperture.V3IdlYAngle)
             if 'LYOT' in apername:
                 width_arcsec = 0.72
-                radius_arcsec = 2.16
-                circular_part = patches.Circle((0, 0), radius=radius_arcsec / arcsec_per_pixel)
                 x_verts = width_arcsec / arcsec_per_pixel * np.array([-1, -1, 1, 1])
                 y_verts = y_sci_size / 2 * np.array([-1, 1, 1, -1])
-                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
-                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
-                verts = np.concatenate([x_verts_rot[:,np.newaxis], y_verts_rot[:,np.newaxis]], axis=1)
+                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts + aperture.XSciRef
+                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts + aperture.YSciRef
+                # convert px to Idl coords
+                x_verts_idl, y_verts_idl = aperture.Sci2Idl(x_verts_rot, y_verts_rot)
+                verts = np.concatenate([x_verts_idl[:,np.newaxis], y_verts_idl[:,np.newaxis]], axis=1)
                 rectangular_part = patches.Polygon(verts)
+                # already in Idl coords
+                radius_arcsec = 2.16
+                circular_part = patches.Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
                 self._mask_artist = self.detector_ax.add_artist(mask_collection)
             elif '1065' in apername or '1140' in apername or '1550' in apername:
@@ -930,9 +939,12 @@ class VisibilityCalculator(object):
                 maskwidth = width_arcsec / arcsec_per_pixel
                 x_verts = np.array([-x, -maskwidth, -maskwidth, maskwidth, maskwidth, x, x, maskwidth, maskwidth, -maskwidth, -maskwidth, -x])
                 y_verts = np.array([maskwidth, maskwidth, y, y, maskwidth, maskwidth, -maskwidth, -maskwidth, -y, -y, -maskwidth, -maskwidth])
-                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
-                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
-                verts = np.concatenate([x_verts_rot[:,np.newaxis], y_verts_rot[:,np.newaxis]], axis=1)
+                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts + aperture.XSciRef
+                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts + aperture.YSciRef
+
+                # convert to Idl coords
+                x_verts_idl, y_verts_idl = aperture.Sci2Idl(x_verts_rot, y_verts_rot)
+                verts = np.concatenate([x_verts_idl[:,np.newaxis], y_verts_idl[:,np.newaxis]], axis=1)
                 mask = patches.Polygon(verts, alpha=0.5)
                 self._mask_artist = self.detector_ax.add_artist(mask)
             else:
