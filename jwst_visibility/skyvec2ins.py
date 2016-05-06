@@ -460,28 +460,19 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     reftelcoords3_rad[:, :, 1] = refteloffset3_rad[:, :, 1] + cortelcoords_rad[1]
 
     # Transform from (v2,v3) telescope coordinates to science coordinates
-    targdetcoords = np.zeros((nrolls, npoints, 2))
-    targscicoords = np.zeros((nrolls, npoints, 2))
+    targidlcoords = np.zeros((nrolls, npoints, 2))
     for i in range(npoints):
         for j in range(nrolls):
             temptelcoords = np.array([targtelcoords_rad[j, i, 0], targtelcoords_rad[j, i, 1]]) * 206264.806247  # arcseconds
             tempidlcoords = aper.Tel2Idl(temptelcoords[0], temptelcoords[1])
-            tempscicoords = aper.Idl2Sci(tempidlcoords[0], tempidlcoords[1])
-            targscicoords[j, i] = np.asarray(tempscicoords)
-            tempdetcoords = aper.Sci2Det(tempscicoords[0], tempscicoords[1])
-            targdetcoords[j, i] = np.asarray(tempdetcoords)
+            targidlcoords[j, i] = np.asarray(tempidlcoords)
 
+    refidlcoordsN = np.zeros((nrolls, npoints, 2))
+    refidlcoordsE = np.zeros((nrolls, npoints, 2))
+    refidlcoords1 = np.zeros((nrolls, npoints, 2))
+    refidlcoords2 = np.zeros((nrolls, npoints, 2))
+    refidlcoords3 = np.zeros((nrolls, npoints, 2))
 
-    refdetcoordsN = np.zeros((nrolls, npoints, 2))
-    refdetcoordsE = np.zeros((nrolls, npoints, 2))
-    refdetcoords1 = np.zeros((nrolls, npoints, 2))
-    refdetcoords2 = np.zeros((nrolls, npoints, 2))
-    refdetcoords3 = np.zeros((nrolls, npoints, 2))
-    refscicoordsN = np.zeros((nrolls, npoints, 2))
-    refscicoordsE = np.zeros((nrolls, npoints, 2))
-    refscicoords1 = np.zeros((nrolls, npoints, 2))
-    refscicoords2 = np.zeros((nrolls, npoints, 2))
-    refscicoords3 = np.zeros((nrolls, npoints, 2))
     for i in range(npoints):
         for j in range(nrolls):
             temptelcoordsN = np.array([reftelcoordsN_rad[j, i, 0], reftelcoordsN_rad[j, i, 1]]) * 206264.806247  # arcseconds
@@ -489,45 +480,32 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
             temptelcoords1 = np.array([reftelcoords1_rad[j,i,0], reftelcoords1_rad[j,i,1]]) * 206264.806247  # arcseconds
             temptelcoords2 = np.array([reftelcoords2_rad[j,i,0], reftelcoords2_rad[j,i,1]]) * 206264.806247  # arcseconds
             temptelcoords3 = np.array([reftelcoords3_rad[j,i,0], reftelcoords3_rad[j,i,1]]) * 206264.806247  # arcseconds
+
             tempidlcoordsN = aper.Tel2Idl(temptelcoordsN[0], temptelcoordsN[1])
             tempidlcoordsE = aper.Tel2Idl(temptelcoordsE[0], temptelcoordsE[1])
             tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
             tempidlcoords2 = aper.Tel2Idl(temptelcoords2[0], temptelcoords2[1])
             tempidlcoords3 = aper.Tel2Idl(temptelcoords3[0], temptelcoords3[1])
-            tempscicoordsN = aper.Idl2Sci(tempidlcoordsN[0], tempidlcoordsN[1])
-            tempscicoordsE = aper.Idl2Sci(tempidlcoordsE[0], tempidlcoordsE[1])
-            tempscicoords1 = aper.Idl2Sci(tempidlcoords1[0], tempidlcoords1[1])
-            tempscicoords2 = aper.Idl2Sci(tempidlcoords2[0], tempidlcoords2[1])
-            tempscicoords3 = aper.Idl2Sci(tempidlcoords3[0], tempidlcoords3[1])
-            refscicoordsN[j, i] = tempscicoordsN
-            refscicoordsE[j, i] = tempscicoordsE
-            refscicoords1[j, i] = tempscicoords1
-            refscicoords2[j, i] = tempscicoords2
-            refscicoords3[j, i] = tempscicoords3
-            tempdetcoordsN = aper.Sci2Det(tempscicoordsN[0], tempscicoordsN[1])
-            tempdetcoordsE = aper.Sci2Det(tempscicoordsE[0], tempscicoordsE[1])
-            tempdetcoords1 = aper.Sci2Det(tempscicoords1[0], tempscicoords1[1])
-            tempdetcoords2 = aper.Sci2Det(tempscicoords2[0], tempscicoords2[1])
-            tempdetcoords3 = aper.Sci2Det(tempscicoords3[0], tempscicoords3[1])
-            refdetcoordsN[j,i] = tempdetcoordsN
-            refdetcoordsE[j,i] = tempdetcoordsE
-            refdetcoords1[j,i] = tempdetcoords1
-            refdetcoords2[j,i] = tempdetcoords2
-            refdetcoords3[j,i] = tempdetcoords3
+
+            refidlcoordsN[j, i] = tempidlcoordsN
+            refidlcoordsE[j, i] = tempidlcoordsE
+            refidlcoords1[j, i] = tempidlcoords1
+            refidlcoords2[j, i] = tempidlcoords2
+            refidlcoords3[j, i] = tempidlcoords3
 
     # Detector coordinates of star and companion
-    s_x = targscicoords[:, :, 0] - corscicoords[0]
-    s_y = targscicoords[:, :, 1] - corscicoords[1]
-    c1_x = refscicoords1[:, :, 0] - corscicoords[0]
-    c1_y = refscicoords1[:, :, 1] - corscicoords[1]
-    c2_x = refscicoords2[:, :, 0] - corscicoords[0]
-    c2_y = refscicoords2[:, :, 1] - corscicoords[1]
-    c3_x = refscicoords3[:, :, 0] - corscicoords[0]
-    c3_y = refscicoords3[:, :, 1] - corscicoords[1]
-    n_x = refscicoordsN[:, :, 0] - corscicoords[0]
-    n_y = refscicoordsN[:, :, 1] - corscicoords[1]
-    e_x = refscicoordsE[:, :, 0] - corscicoords[0]
-    e_y = refscicoordsE[:, :, 1] - corscicoords[1]
+    s_x = targidlcoords[:, :, 0] - coridlcoords[0]
+    s_y = targidlcoords[:, :, 1] - coridlcoords[1]
+    c1_x = refidlcoords1[:, :, 0] - coridlcoords[0]
+    c1_y = refidlcoords1[:, :, 1] - coridlcoords[1]
+    c2_x = refidlcoords2[:, :, 0] - coridlcoords[0]
+    c2_y = refidlcoords2[:, :, 1] - coridlcoords[1]
+    c3_x = refidlcoords3[:, :, 0] - coridlcoords[0]
+    c3_y = refidlcoords3[:, :, 1] - coridlcoords[1]
+    n_x = refidlcoordsN[:, :, 0] - coridlcoords[0]
+    n_y = refidlcoordsN[:, :, 1] - coridlcoords[1]
+    e_x = refidlcoordsE[:, :, 0] - coridlcoords[0]
+    e_y = refidlcoordsE[:, :, 1] - coridlcoords[1]
 
     # END OF DETECTOR POS SECTION
 
