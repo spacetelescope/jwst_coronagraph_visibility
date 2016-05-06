@@ -400,6 +400,7 @@ class VisibilityCalculator(object):
         self.simbad_query = StringVar()
         simbad_entry = ttk.Entry(frame, textvariable=self.simbad_query)
         simbad_entry.grid(column=0, row=1, sticky=(N, W, E, S), columnspan=3)
+        simbad_entry.bind('<Return>', lambda evt: self.do_simbad_lookup())
         simbad_button = ttk.Button(frame, text="Search", command=self.do_simbad_lookup)
         simbad_button.grid(column=3, row=1)
 
