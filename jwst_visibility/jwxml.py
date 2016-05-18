@@ -478,7 +478,7 @@ class SIAF(object):
         elif self.instrument =='NIRISS':
             fullaps.append( self.apertures['NIS-CEN'])
         elif self.instrument =='MIRI':
-            fullaps.append( self.apertures['MIRIM_FULL_CNTR'])
+            fullaps.append( self.apertures['MIRIM_FULL'])
         elif self.instrument =='FGS':
             fullaps.append( self.apertures['FGS1_FULL'])
             fullaps.append( self.apertures['FGS2_FULL'])
@@ -512,7 +512,7 @@ class SIAF(object):
 
         # which list of apertures to iterate over?
         if subarrays:
-            iterable = self.apertures.itervalues
+            iterable = self.apertures.values
         else:
             iterable = self._getFullApertures
 
