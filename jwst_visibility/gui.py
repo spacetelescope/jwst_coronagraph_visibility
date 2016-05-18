@@ -917,16 +917,24 @@ class VisibilityCalculator(object):
             patch = patches.Polygon(verts, alpha=0.5)
             self._mask_artist = self.detector_ax.add_artist(patch)
         elif 'MIRI' in apername:
-            y_angle = float(aperture.V3IdlYAngle)
+            y_angle = np.deg2rad(aperture.V3IdlYAngle)
             if 'LYOT' in apername:
+                # David Law, personal communication, May 2016:
+                # The clear-aperture area for the Lyot is 272x272 pixels
+                min_x, min_y = aperture.Det2Idl(-272 // 2 + aperture.XDetRef, -272 // 2 + aperture.YDetRef)
+                max_x, max_y = aperture.Det2Idl(272 // 2 + aperture.XDetRef, 272 // 2 + aperture.YDetRef)
+                self.detector_ax.plot(
+                    [min_x, max_x, max_x, min_x, min_x],
+                    [min_y, min_y, max_y, max_y, min_y]
+                )
+
                 width_arcsec = 0.72
-                x_verts = width_arcsec / arcsec_per_pixel * np.array([-1, -1, 1, 1])
-                y_verts = y_sci_size / 2 * np.array([-1, 1, 1, -1])
-                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts + aperture.XSciRef
-                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts + aperture.YSciRef
-                # convert px to Idl coords
-                x_verts_idl, y_verts_idl = aperture.Sci2Idl(x_verts_rot, y_verts_rot)
-                verts = np.concatenate([x_verts_idl[:,np.newaxis], y_verts_idl[:,np.newaxis]], axis=1)
+                x_verts = width_arcsec * np.array([-1, -1, 1, 1]) / 2
+                y_verts = np.array([min_y, max_y, max_y, min_y])
+                x_verts = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
+                y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+
+                verts = np.concatenate([x_verts[:,np.newaxis], y_verts[:,np.newaxis]], axis=1)
                 rectangular_part = patches.Polygon(verts)
                 # already in Idl coords
                 radius_arcsec = 2.16
@@ -935,17 +943,47 @@ class VisibilityCalculator(object):
                 self._mask_artist = self.detector_ax.add_artist(mask_collection)
             elif '1065' in apername or '1140' in apername or '1550' in apername:
                 width_arcsec = 0.33
-                x = x_sci_size / 2
-                y = y_sci_size / 2
-                maskwidth = width_arcsec / arcsec_per_pixel
-                x_verts = np.array([-x, -maskwidth, -maskwidth, maskwidth, maskwidth, x, x, maskwidth, maskwidth, -maskwidth, -maskwidth, -x])
-                y_verts = np.array([maskwidth, maskwidth, y, y, maskwidth, maskwidth, -maskwidth, -maskwidth, -y, -y, -maskwidth, -maskwidth])
-                x_verts_rot = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts + aperture.XSciRef
-                y_verts_rot = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts + aperture.YSciRef
+                # David Law, personal communication, May 2016:
+                # The clear-aperture area for the 4QPM is 216x216 pixels
+                min_x, min_y = aperture.Det2Idl(-216 // 2 + aperture.XDetRef, -216 // 2 + aperture.YDetRef)
+                max_x, max_y = aperture.Det2Idl(216 // 2 + aperture.XDetRef, 216 // 2 + aperture.YDetRef)
+                self.detector_ax.plot(
+                    [min_x, max_x, max_x, min_x, min_x],
+                    [min_y, min_y, max_y, max_y, min_y]
+                )
 
-                # convert to Idl coords
-                x_verts_idl, y_verts_idl = aperture.Sci2Idl(x_verts_rot, y_verts_rot)
-                verts = np.concatenate([x_verts_idl[:,np.newaxis], y_verts_idl[:,np.newaxis]], axis=1)
+                x_verts = np.array([
+                    min_x,
+                    -width_arcsec,
+                    -width_arcsec,
+                    width_arcsec,
+                    width_arcsec,
+                    max_x,
+                    max_x,
+                    width_arcsec,
+                    width_arcsec,
+                    -width_arcsec,
+                    -width_arcsec,
+                    min_x
+                ])
+                y_verts = np.array([
+                    width_arcsec,
+                    width_arcsec,
+                    max_y,
+                    max_y,
+                    width_arcsec,
+                    width_arcsec,
+                    -width_arcsec,
+                    -width_arcsec,
+                    min_y,
+                    min_y,
+                    -width_arcsec,
+                    -width_arcsec
+                ])
+                x_verts = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
+                y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+
+                verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
                 mask = patches.Polygon(verts, alpha=0.5)
                 self._mask_artist = self.detector_ax.add_artist(mask)
             else:
