@@ -56,11 +56,14 @@ def _compare_outputs(reference, computed):
     assert np.allclose(roll_rad, t_roll_rad, atol=2e-6)
     assert not np.any((observable == 1) ^ (t_observable == 1))
 
-    siaf_transform_epsilon = 2e-5
+
+    nircam_pixelscale = 0.0311 # for short-wavelen channels, SIAF PRDDEVSOC-D-012, 2016 April
+    siaf_transform_epsilon = nircam_pixelscale / 100
     # rationale: comparison of the SIAF transforms shows they should be
     # mathematically correct in both implementations, but numerical errors are
     # somehow being compounded to result in errors that are nevertheless small
-    # relative to the size of a pixel (<< 0.01 px).
+    # relative to the size of a pixel (<< 0.01 px). We set the tolerance at
+    # 1/100 of a NIRCam pixel.
 
     # n.b. the residuals are larger in Y for this test case
     # see https://github.com/mperrin/jwxml/issues/4
