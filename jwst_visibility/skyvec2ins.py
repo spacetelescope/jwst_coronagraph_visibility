@@ -108,38 +108,61 @@ def _tenv(dd, mm, ss):
     sgn, dd_mag = dd / dd, np.abs(dd)
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
-def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
-               separation_as3, instrname, apername, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
+def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, instrname, apername, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
     """
-    ;---------------------
-    ; INPUTS
-    ;---------------------
-    ;ra = right ascension of target in decimal degrees
-    ;dec = declination of target in decimal degrees
-    ;pa1 - pa3 = position angle of companions 1 - 3 in degrees
-    ;separation_as1 - separation_as3 = separation of companions 1 - 3 in arcseconds
-    ;instrname = name of instrument
-    ;apername = name of SIAF aperture
-    lambda_rad0 = ecliptic longitude of quadrature with the sun, in radians, at the beginning of the year-long interval sampled (indirectly, this specifies the start date)
-    (via Chris Stark: "lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.  So it should be 90 deg W of the solar longitude")
-    ;npoints = # of elongations calculated, default 360
-    ;nrolls = # of roll angles calculated, default 20
-    maxvroll = degrees max V roll to consider (not max allowable), default 7.0
+    Parameters
+    ----------
+    ra : float
+        right ascension of target in decimal degrees (0-360)
+    dec : float
+        declination of target in decimal degrees (-90, 90)
+    pa1, pa2, pa3 : float
+        position angles of companions in degrees east of north
+    separation_as1, separation_as2, separation_as3 : float
+        separations of companions in arcseconds
+    instrname : string
+        JWST science instrument name
+    apername : string
+        instrument aperture name (as represented in the SIAF)
+    lambda_rad0 : float
+        ecliptic longitude of quadrature with the sun, in radians,
+        at the beginning of the year-long interval sampled by
+        this function (indirectly, this specifies the start date).
+    npoints : int
+        number of points to sample in the year-long interval
+        to find observable dates (default: 360)
+    nrolls : int
+        number of roll angles in the allowed roll angle range to
+        sample at each date (default: 14)
+    maxvroll : float
+        maximum number of degrees positive or negative roll around
+        the boresight to allow (as designed: 7.0)
 
-    ;---------------------
-    ; OUTPUTS
-    ;---------------------
-    ;x = 1D vector, days
-    ;observable = 2D array (0 = point unobservable, 1 = observable)
-    ;elongation_rad = 1D vector, elongation in radians
-    ;roll_rad = 2D array, v3 PA in radians
-    ;s_x, s_y = 2D array, stellar location on detector in pix
-    ;c#_x, c#_y = 2D array, companion locations on detector in pix
+    Note: `lambda_rad0` is the longitude of quadrature at
+    day 0 of the code, so it should be 90 deg W of the
+    solar longitude.
 
-    ;scisize = dimension of science aperture in pix
-    ;sciscale = scale of science aperture in arcsec / pix
-    ;n_x, n_y = north vector in science frame
-    ;e_x, e_y = east vector in science frame
+    Returns
+    -------
+    x : numpy.ndarray
+        float array of length `npoints` containing days from starting
+        date
+    observable : numpy.ndarray
+        uint8 array of shape (`nrolls`, `npoints`) that is 1 where
+        the target is observable and 0 otherwise
+    elongation_rad : numpy.ndarray
+        float array of length `npoints` containing elongation of the
+        observatory in radians
+    roll_rad : numpy.ndarray
+        float array of shape (`nrolls`, `npoints`) containing V3 PA
+        in radians
+    c1_x, c1_y, c2_x, c2_y, c3_x, c3_y : numpy.ndarray
+        float array of shape (`nrolls`, `npoints`) containing the
+        location of the companions in "Idl" (ideal) frame coordinates
+    n_x, n_y, e_x, e_y : numpy.ndarray
+        float array of shape (`nrolls`, `npoints`) containing the location
+        of a reference "north" vector and "east" vector from the
+        center in "Idl" (ideal) frame coordinates
     """
 
     # Constants
@@ -163,10 +186,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
     assert exists(siaf_path), 'no SIAF for {}'.format(instrname)
     siaf = SIAF(instr=instrname, filename=siaf_path)
     aper = siaf[apername]
-
-    scisize = [aper.XSciSize, aper.YSciSize]  # save this info to an output
-    sciscale = [aper.XSciScale, aper.YSciScale]  # save this info to an output
-    sciyangle = aper.V3SciYAngle
 
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
@@ -548,6 +567,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2,
 
     x = np.arange(npoints) * (365.25 / npoints)  # days since launch
 
-    return (x, observable.astype(np.uint8), elongation_rad, roll_rad, s_x, s_y, c1_x, c1_y,
-            c2_x, c2_y, c3_x, c3_y,
-            scisize, sciscale, np.deg2rad(sciyangle), n_x, n_y, e_x, e_y)
+    return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
+            c1_x, c1_y,
+            c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
