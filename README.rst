@@ -1,7 +1,7 @@
 JWST Target Visibility Calculator
 =================================
 
-**This initial release is for user testing and (as with any software) bugs may remain! Report any issues at https://github.com/spacetelescope/jwst_visibility/issues/new **
+**This initial release is for user testing and (as with any software) bugs may remain! Report any issues at https://github.com/spacetelescope/jwst_visibility/issues/new or via email to the authors**
 
 *Authors: Christopher Stark (cstark@stsci.edu), Joseph Long (jlong@stsci.edu)*
 
