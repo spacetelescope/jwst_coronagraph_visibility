@@ -70,17 +70,10 @@ class VisibilityCalculation(object):
         self.lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
         # Outputs
-        self.x = None
+        self.days = None
         self.observable = None
         self.elongation_rad = None
         self.roll_rad = None
-
-        self.scisize = None
-        self.sciscale = None
-        self.sciyangle = None
-
-        self.s_x = None
-        self.s_y = None
         self.c1_x = None
         self.c1_y = None
         self.c2_x = None
@@ -94,16 +87,15 @@ class VisibilityCalculation(object):
 
     def calculate(self):
         (
-            self.x,
+            self.days,
             self.observable,
             self.elongation_rad,
             self.roll_rad,
-            self.s_x, self.s_y,
             self.c1_x, self.c1_y,
             self.c2_x, self.c2_y,
             self.c3_x, self.c3_y,
-            self.scisize, self.sciscale, self.sciyangle,
-            self.n_x, self.n_y, self.e_x, self.e_y
+            self.n_x, self.n_y,
+            self.e_x, self.e_y
         ) = skyvec2ins(
             ra=self.ra,
             dec=self.dec,
@@ -121,11 +113,8 @@ class VisibilityCalculation(object):
             nrolls=self.nrolls
         )
 
-        self.days = self.x
         # mask non-observable (roll, elongation) pairs from output data
         mask = self.observable == 0
-        self.s_x[mask] = np.nan
-        self.s_y[mask] = np.nan
 
         self.c1_x[mask] = np.nan
         self.c1_y[mask] = np.nan
@@ -855,17 +844,18 @@ class VisibilityCalculator(object):
     def _update_detector(self):
         ax = self.detector_ax
         ax.clear()
-        arcsec_per_pixel = np.average(self.result.sciscale)  # avg of scale in x and y
+        aperture = self.result.aperture
+        arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         ax.set_title('{name}\n({x_size:.0f} x {y_size:.0f} pixels, {scale:1.4f} arcsec/pixel)'.format(
-            name=self.result.aperture.AperName,
-            x_size=self.result.aperture.XSciSize,
-            y_size=self.result.aperture.YSciSize,
+            name=aperture.AperName,
+            x_size=aperture.XSciSize,
+            y_size=aperture.YSciSize,
             scale=arcsec_per_pixel,
         ))
         self._mask_artist = None
         ax.set_aspect('equal')
 
-        aper_corners_x, aper_corners_y = self.result.aperture.corners(frame='Idl')
+        aper_corners_x, aper_corners_y = aperture.corners(frame='Idl')
         verts = np.concatenate([aper_corners_x[:,np.newaxis], aper_corners_y[:,np.newaxis]], axis=1)
         patch = patches.Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
         ax.add_artist(patch)
@@ -878,17 +868,17 @@ class VisibilityCalculator(object):
         ax.set_ylim(np.min(aper_corners_y) - 5, np.max(aper_corners_y) + 5)
         ax.set_xlabel('x (arcsec, ideal frame)')
         ax.set_ylabel('y (arcsec, ideal frame)')
-        ax.scatter(self.result.s_x, self.result.s_y, facecolor='yellow', edgecolor='black', marker='*', s=100)
 
-        self._overlay_mask(self.result.aperture.AperName)
+        self._overlay_mask()
 
-    def _overlay_mask(self, apername):
+    def _overlay_mask(self):
         if self._mask_artist is not None:
             self._mask_artist.remove()
-        arcsec_per_pixel = np.average(self.result.sciscale)  # avg of scale in x and y
-        x_sci_size, y_sci_size = self.result.scisize
         aperture = self.result.aperture
-        if 'NRC' in apername and apername[-1] == 'R':
+        arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
+        x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
+
+        if 'NRC' in aperture.AperName and aperture.AperName[-1] == 'R':
             if '210R' in apername:
                 radius_arcsec = 0.40
             elif '335R' in apername:
@@ -899,11 +889,11 @@ class VisibilityCalculator(object):
                 raise RuntimeError("Invalid mask!")
             # make a circle
             self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
-        elif 'NRC' in apername:
-            if 'LWB' in apername:
+        elif 'NRC' in aperture.AperName:
+            if 'LWB' in aperture.AperName:
                 thin_extent_arcsec = 0.58 * (2 / 4)
                 thick_extent_arcsec = 0.58 * (6 / 4)
-            elif 'SWB' in apername:
+            elif 'SWB' in aperture.AperName:
                 thin_extent_arcsec = 0.27 * (2 / 4)
                 thick_extent_arcsec = 0.27 * (6 / 4)
             else:
@@ -920,9 +910,9 @@ class VisibilityCalculator(object):
             verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
             patch = patches.Polygon(verts, alpha=0.5)
             self._mask_artist = self.detector_ax.add_artist(patch)
-        elif 'MIRI' in apername:
+        elif 'MIRI' in aperture.AperName:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
-            if 'LYOT' in apername:
+            if 'LYOT' in aperture.AperName:
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the Lyot is 272x272 pixels
                 min_x, min_y = aperture.Det2Idl(-272 // 2 + aperture.XDetRef, -272 // 2 + aperture.YDetRef)
@@ -945,7 +935,7 @@ class VisibilityCalculator(object):
                 circular_part = patches.Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
                 self._mask_artist = self.detector_ax.add_artist(mask_collection)
-            elif '1065' in apername or '1140' in apername or '1550' in apername:
+            elif '1065' in aperture.AperName or '1140' in aperture.AperName or '1550' in aperture.AperName:
                 width_arcsec = 0.33
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the 4QPM is 216x216 pixels
