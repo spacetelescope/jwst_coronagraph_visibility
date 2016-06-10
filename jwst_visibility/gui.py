@@ -158,7 +158,7 @@ class VisibilityCalculator(object):
         NIRCAM_B: NIRCAM_B_APERNAMES,
         MIRI: MIRI_APERNAMES
     }
-    DETECTOR_PA = 1
+    APERTURE_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
     START_DATE = datetime.date(2018, 10, 1)
@@ -248,16 +248,16 @@ class VisibilityCalculator(object):
         instrument_mask_frame.grid(column=0, row=2, sticky=(N, W, E, S))
         instrument_mask_frame.grid_configure(pady=15)
 
-        # < > Detector PA  < > V3 PA
+        # < > Aperture PA  < > V3 PA
         pa_control_frame = ttk.Frame(frame)
-        self.pa_coords = IntVar(value=self.DETECTOR_PA)
-        detector_pa_radio = ttk.Radiobutton(
+        self.pa_coords = IntVar(value=self.APERTURE_PA)
+        aperture_pa_radio = ttk.Radiobutton(
             pa_control_frame,
-            text='Detector PA',
-            value=self.DETECTOR_PA,
+            text='Aperture PA',
+            value=self.APERTURE_PA,
             variable=self.pa_coords
         )
-        detector_pa_radio.grid(column=0, row=0)
+        aperture_pa_radio.grid(column=0, row=0)
         v3_pa_radio = ttk.Radiobutton(
             pa_control_frame,
             text='V3 PA',
@@ -711,11 +711,11 @@ class VisibilityCalculator(object):
         )
 
         self._last_plotted_pa = self.pa_coords.get()
-        if self._last_plotted_pa == self.DETECTOR_PA:
-            # detector PA
-            pa_label = 'Detector PA'
+        if self._last_plotted_pa == self.APERTURE_PA:
+            # Aperture PA
+            pa_label = 'Aperture PA'
             pa_color = BLUE_GGPLOT
-            # theta = np.rad2deg(roll_rad + sciyangle)
+
             # n.b. sciyangle is incorrect in PRDSOCDEV 012
             theta = np.rad2deg(np.arctan2(self.result.n_x, self.result.n_y))
         else:
@@ -796,8 +796,8 @@ class VisibilityCalculator(object):
         self._plot_overlay_elements.append(obs_vline)
         obs_hline = self.observability_ax.axhline(self._theta[yidx, xidx], color=BLUE_GGPLOT)
         self._plot_overlay_elements.append(obs_hline)
-        if self._last_plotted_pa == self.DETECTOR_PA:
-            pa_label = 'Detector PA'
+        if self._last_plotted_pa == self.APERTURE_PA:
+            pa_label = 'Aperture PA'
         else:
             pa_label = 'V3 PA'
 
