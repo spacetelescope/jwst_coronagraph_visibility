@@ -3,10 +3,12 @@ import numpy as np
 
 from .. import skyvec2ins
 
+# Magic numbers to match the exact inputs to the IDL code that
+# made these test reference outputs
 NPOINTS = 360
 NROLLS = 20
 MAXVROLL = 10.0
-LAMBDA_RAD0 = np.deg2rad(191.05)
+LAMBDA_RAD0 = np.deg2rad(-83+180)
 
 def _load_test_case(test_case_name):
     case_path = abspath(join(dirname(__file__), 'targets', test_case_name))
@@ -16,12 +18,11 @@ def _load_test_case(test_case_name):
         'observable',
         'elongation_rad',
         'roll_rad',
-        's_x', 's_y',
         'c1_x', 'c1_y',
         'c2_x', 'c2_y',
         'c3_x', 'c3_y',
-        'scisize', 'sciscale', 'sciyangle',
-        'n_x', 'n_y', 'e_x', 'e_y'
+        'n_x', 'n_y',
+        'e_x', 'e_y'
     )
     return (np.genfromtxt(join(case_path, '{}.csv'.format(n)), delimiter=',') for n in arrs)
 
@@ -31,12 +32,11 @@ def _compare_outputs(reference, computed):
         observable,
         elongation_rad,
         roll_rad,
-        s_x, s_y,
         c1_x, c1_y,
         c2_x, c2_y,
         c3_x, c3_y,
-        scisize, sciscale, sciyangle,
-        n_x, n_y, e_x, e_y
+        n_x, n_y,
+        e_x, e_y
     ) = reference
 
     (
@@ -44,12 +44,11 @@ def _compare_outputs(reference, computed):
         t_observable,
         t_elongation_rad,
         t_roll_rad,
-        t_s_x, t_s_y,
         t_c1_x, t_c1_y,
         t_c2_x, t_c2_y,
         t_c3_x, t_c3_y,
-        t_scisize, t_sciscale, t_sciyangle,
-        t_n_x, t_n_y, t_e_x, t_e_y
+        t_n_x, t_n_y,
+        t_e_x, t_e_y
     ) = computed
 
     assert np.allclose(x, t_x)
@@ -57,14 +56,7 @@ def _compare_outputs(reference, computed):
     assert np.allclose(roll_rad, t_roll_rad, atol=2e-6)
     assert not np.any((observable == 1) ^ (t_observable == 1))
 
-    assert np.allclose(scisize, t_scisize, atol=1e-7)
-    assert np.allclose(sciscale, t_sciscale, atol=1e-7)
-    assert np.allclose(sciyangle, t_sciyangle)
-
-    assert np.allclose(s_x, t_s_x, atol=8e-4)  # TODO verify with cstark
-    assert np.allclose(s_y, t_s_y, atol=8e-4)  # why this is large
-
-    siaf_transform_epsilon = 13e-4
+    siaf_transform_epsilon = 2e-5
     # rationale: comparison of the SIAF transforms shows they should be
     # mathematically correct in both implementations, but numerical errors are
     # somehow being compounded to result in errors that are nevertheless small
