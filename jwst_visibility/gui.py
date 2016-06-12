@@ -161,7 +161,7 @@ class VisibilityCalculator(object):
     APERTURE_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
-    START_DATE = datetime.date(2018, 10, 1)
+    START_DATE = datetime.datetime(2018, 10, 1, 12, 00)
 
     def __init__(self):
         self.root = Tk()
@@ -203,7 +203,7 @@ class VisibilityCalculator(object):
             background=[('disabled','#d9d9d9'),],
             foreground=[('disabled','#a3a3a3')]
         )
-        self.root.minsize(width=900, height=500)
+        self.root.minsize(width=1366, height=500)
         # ensure resizing happens:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -876,25 +876,26 @@ class VisibilityCalculator(object):
         if self._mask_artist is not None:
             self._mask_artist.remove()
         aperture = self.result.aperture
+        aperture_name = aperture.AperName
         arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
 
-        if 'NRC' in aperture.AperName and aperture.AperName[-1] == 'R':
-            if '210R' in apername:
+        if 'NRC' in aperture_name and aperture_name[-1] == 'R':
+            if '210R' in aperture_name:
                 radius_arcsec = 0.40
-            elif '335R' in apername:
+            elif '335R' in aperture_name:
                 radius_arcsec = 0.64
-            elif '430R' in apername:
+            elif '430R' in aperture_name:
                 radius_arcsec = 0.82
             else:
                 raise RuntimeError("Invalid mask!")
             # make a circle
             self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
-        elif 'NRC' in aperture.AperName:
-            if 'LWB' in aperture.AperName:
+        elif 'NRC' in aperture_name:
+            if 'LWB' in aperture_name:
                 thin_extent_arcsec = 0.58 * (2 / 4)
                 thick_extent_arcsec = 0.58 * (6 / 4)
-            elif 'SWB' in aperture.AperName:
+            elif 'SWB' in aperture_name:
                 thin_extent_arcsec = 0.27 * (2 / 4)
                 thick_extent_arcsec = 0.27 * (6 / 4)
             else:
@@ -911,9 +912,9 @@ class VisibilityCalculator(object):
             verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
             patch = patches.Polygon(verts, alpha=0.5)
             self._mask_artist = self.detector_ax.add_artist(patch)
-        elif 'MIRI' in aperture.AperName:
+        elif 'MIRI' in aperture_name:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
-            if 'LYOT' in aperture.AperName:
+            if 'LYOT' in aperture_name:
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the Lyot is 272x272 pixels
                 min_x, min_y = aperture.Det2Idl(-272 // 2 + aperture.XDetRef, -272 // 2 + aperture.YDetRef)
@@ -936,7 +937,7 @@ class VisibilityCalculator(object):
                 circular_part = patches.Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
                 self._mask_artist = self.detector_ax.add_artist(mask_collection)
-            elif '1065' in aperture.AperName or '1140' in aperture.AperName or '1550' in aperture.AperName:
+            elif '1065' in aperture_name or '1140' in aperture_name or '1550' in aperture_name:
                 width_arcsec = 0.33
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the 4QPM is 216x216 pixels
