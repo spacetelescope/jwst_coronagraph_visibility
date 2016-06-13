@@ -546,7 +546,7 @@ class VisibilityCalculator(object):
             self.figure.texts.append(label)
             self.companion_legend_labels.append(label)
 
-            info = matplotlib.text.Text(x=0.57, y=v_pos - line_height / 2, text="# pix @ # deg", transform=self.figure.transFigure, figure=self.figure)
+            info = matplotlib.text.Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure, figure=self.figure)
             self.figure.texts.append(info)
             self.companion_info.append(info)
 
@@ -813,8 +813,8 @@ class VisibilityCalculator(object):
             c_y = getattr(self.result, 'c{}_y'.format(idx + 1))
             x, y = c_x[yidx, xidx], c_y[yidx, xidx]
             highlight = self.detector_ax.scatter(x, y, color='white', edgecolor='black', s=100)
-            self.companion_info[idx].set_text('{dist:.2f} pix @ {angle:.2f} deg'.format(
-                dist=np.sqrt(x**2 + y**2),
+            self.companion_info[idx].set_text('{dist:.2f} arcsec @ {angle:.2f} deg'.format(
+                dist=companion['separation'],
                 angle=np.rad2deg(np.arctan2(-x, y))
             ))
             self._plot_overlay_elements.append(highlight)
