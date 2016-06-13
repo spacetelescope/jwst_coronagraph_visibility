@@ -43,7 +43,7 @@ Before we update the plot, select the instrument and coronagraphic mask that you
 
 When clicking on the science frame panel, the nearest companion point is selected and highlighted. The corresponding companion points are also highlighted, and the corresponding PA is shown with crosshairs in the left panel. Below the science frame panel, the separation (in pixels) and angle on the detector (CCW relative to +y axis) are displayed for each companion point.
 
-By default, the science frame panel is drawn to show the full extent of the coronagraph aperture selected. For close companions, the zoom tool from the toolbar will let you draw a box around the region of interest. When in zoom mode, clicking companion or PA points will not have any effect. Click the zoom toolbar button again to exit zoom mode and restore the original click behavior.
+By default, the science frame panel is drawn to show the full extent of the coronagraph aperture selected. The aperture is outlined in dashed red. (For MIRI coronagraphs, the clear aperture is outlined in solid red within the dashed red overall aperture.) For close companions, the zoom tool from the toolbar will let you draw a box around the region of interest. When in zoom mode, clicking companion or PA points will not have any effect. Click the zoom toolbar button again to exit zoom mode and restore the original click behavior.
 
 Using the Python API
 --------------------
