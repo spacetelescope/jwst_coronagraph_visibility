@@ -5,6 +5,11 @@ JWST Target Visibility Calculator
 
 *Authors: Christopher Stark (cstark@stsci.edu), Joseph Long (jlong@stsci.edu)*
 
+.. image:: screenshot.png
+   :width: 60%
+   :align: center
+   :alt: Screenshot of the JWST Target Visibility Calculator showing target HR 8799 with three companions plotted.
+
 Introduction
 ------------
 
