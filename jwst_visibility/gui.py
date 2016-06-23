@@ -10,6 +10,13 @@ except ImportError:
     import ttk
 import os.path
 import datetime
+import re
+from collections import namedtuple
+
+try:
+    from urllib import quote
+except ImportError:
+    from urllib.parse import quote
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -29,7 +36,9 @@ import numpy as np
 
 import astropy.coordinates as coord
 import astropy.units as u
-from astroquery.simbad import Simbad
+import requests
+
+SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from .jwxml import SIAF
 from .skyvec2ins import skyvec2ins
@@ -43,6 +52,26 @@ GRAY_GGPLOT = '#777777'
 YELLOW_GGPLOT = '#FBC15E'
 GREEN_GGPLOT = '#8EBA42'
 PINK_GGPLOT = '#FFB5B8'
+
+def query_simbad(query_string):
+    response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string))
+    body = response.text
+    ra = dec = canonical_id = None
+    for line in body.split('\n'):
+        if line[:2] == '%J' and ra is None:
+            match = re.match('%J (\d+\.\d+) ([+\-]\d+\.\d+) .+', line)
+            if match is None:
+                return None
+            ra, dec = map(float, match.groups())
+        elif line[:4] == '%I.0' and canonical_id is None:
+            match = re.match('%I.0 (.+)', line)
+            if match is None:
+                return None
+            canonical_id = match.groups()[0]
+    if ra is None or canonical_id is None:
+        return None
+    else:
+        return SimbadResult(ra=ra, dec=dec, id=canonical_id)
 
 class VisibilityCalculation(object):
     def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
@@ -569,21 +598,18 @@ class VisibilityCalculator(object):
         if not len(search_string.strip()) > 0:
             self.error_modal("Search query for SIMBAD must not be empty")
             return
+
         self.root.config(cursor='wait')
         self.root.update()
-        result_table = Simbad.query_object(search_string)
-        if len(result_table) > 1:
-            self.error_modal("More than one object found for this identifier! Try a more specific query, or supply RA and Dec manually.")
+
+        result = query_simbad(search_string.strip())
+        if result is None:
+            self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
             return
-        if len(result_table) == 0:
-            self.error_modal("No objects found for this identifier! Try a different query, or supply RA and Dec manually.")
-            return
-        ra_str, dec_str = result_table[0]['RA'], result_table[0]['DEC']
-        ra_deg = coord.Angle(ra_str, unit=u.hour).degree
-        dec_deg = coord.Angle(dec_str, unit=u.degree).degree
-        self.ra_value.set(str(ra_deg))
-        self.dec_value.set(str(dec_deg))
-        self.simbad_id.set(result_table[0]['MAIN_ID'])
+
+        self.ra_value.set(str(result.ra))
+        self.dec_value.set(str(result.dec))
+        self.simbad_id.set(result.id)
         self.root.config(cursor='')
         self.root.update()
 

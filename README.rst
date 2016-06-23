@@ -19,6 +19,39 @@ We stress that the TVC is designed to provide quick illustrations of the possibl
 
 Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (April 2016), the code includes its own copies of the `PRDDEVSOC-D-012` version of the NIRCam and MIRI SIAFs.
 
+Installation
+------------
+
+We have done our best to support a variety of Python installations, but different users may have particular customizations to their environment that we have not anticipated. Your mileage may vary!
+
+For the most predictable installation experience, we recommend installing Python with the conda package manager and using the `AstroConda <http://astroconda.readthedocs.io/en/latest/index.html>`_ package set supported by STScI. After following the `AstroConda installation instructions <http://astroconda.readthedocs.io/en/latest/installation.html>`_, the following command will install the JWST Target Visibility Calculator:
+
+   pip install -e git+https://github.com/spacetelescope/jwst_visibility.git#egg=jwst-visibility
+
+If you would rather not use AstroConda, read on.
+
+What are the prerequisites for installing the JWST Target Visibility Calculator?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The JWST Target Visibility Calculator depends on:
+
+ * Python 2.7, 3.4, or 3.5
+ * NumPy version 1.9.0 (or greater)
+ * Matplotlib version 1.4.2 (or greater)
+ * requests version 2.8.1 (or greater)
+
+Running the automated test suite additionally depends on pytest version 2.9.1 (or greater).
+
+Can I install the JWST Target Visibility Calculator without using conda at all?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The pip command should be sufficient to install the prerequisites in most cases. If you experience difficulties, try installing NumPy alone first, then using the given installation command.
+
+Can I install the JWST Target Visibility Calculator without all of AstroConda?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Yes! If you're already using conda, but do not want to install everything else included in AstroConda, simply install the prerequisite packages with ``conda install`` before running the ``pip`` command listed above.
+
 Using the GUI
 -------------
 
