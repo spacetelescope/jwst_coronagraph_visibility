@@ -846,7 +846,11 @@ class VisibilityCalculator(object):
             self._plot_overlay_elements.append(highlight)
 
         separations = [self.result.companions[i]['separation'] for i in range(3)]
-        scale_factor = 1.1 * np.max(separations)
+        if np.max(separations) > 0:
+            scale_factor = 1.1 * np.max(separations)
+        else:
+            arcsec_per_pixel = np.average([self.result.aperture.XSciScale, self.result.aperture.YSciScale])
+            scale_factor = self.result.aperture.XSciSize * arcsec_per_pixel / 2.0
 
         n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
         n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
