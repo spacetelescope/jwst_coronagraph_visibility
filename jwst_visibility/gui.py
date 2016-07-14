@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf8 :
 from __future__ import print_function, division
-
+import sys
+if getattr(sys, 'frozen', False):
+    # we are running in a bundle
+    bundle_dir = sys._MEIPASS
+else:
+    # we are running in a normal Python environment
+    bundle_dir = os.path.dirname(os.path.abspath(__file__))
 try:
     from tkinter import *
     from tkinter import ttk
@@ -674,8 +680,8 @@ class VisibilityCalculator(object):
         self.root.update()
 
         # TODO we want to eventually pass jwxml.Aperture instances into the calculation
-        siaf_path = os.path.join(os.path.dirname(__file__), 'data', '{}_SIAF.xml'.format(instrname))
-        assert os.path.exists(siaf_path), 'no SIAF for {}'.format(instrname)
+        siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
+        assert os.path.exists(siaf_path), 'no SIAF for {} in {}'.format(instrname, siaf_path)
         siaf = SIAF(instr=instrname, filename=siaf_path)
         aper = siaf[apername]
 
