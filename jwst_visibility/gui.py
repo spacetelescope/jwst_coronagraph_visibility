@@ -2,18 +2,13 @@
 # vim: set fileencoding=utf8 :
 from __future__ import print_function, division
 import sys
-if getattr(sys, 'frozen', False):
-    # we are running in a bundle
-    bundle_dir = sys._MEIPASS
-else:
-    # we are running in a normal Python environment
-    bundle_dir = os.path.dirname(os.path.abspath(__file__))
 try:
     from tkinter import *
     from tkinter import ttk
 except ImportError:
     from Tkinter import *
     import ttk
+import os
 import os.path
 import datetime
 import re
@@ -34,13 +29,16 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 # implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
-
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
-
 import numpy as np
-
 import requests
+if getattr(sys, 'frozen', False):
+    # we are running in a bundle
+    bundle_dir = sys._MEIPASS
+else:
+    # we are running in a normal Python environment
+    bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
@@ -76,6 +74,12 @@ def query_simbad(query_string):
         return None
     else:
         return SimbadResult(ra=ra, dec=dec, id=canonical_id)
+
+def get_aperture(instrname, apername):
+    siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
+    assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
+    siaf = SIAF(instr=instrname, filename=siaf_path)
+    return siaf[apername]
 
 class VisibilityCalculation(object):
     def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
