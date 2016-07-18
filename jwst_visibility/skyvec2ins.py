@@ -108,7 +108,7 @@ def _tenv(dd, mm, ss):
     sgn, dd_mag = dd / dd, np.abs(dd)
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
-def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, instrname, apername, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
+def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
     """
     Parameters
     ----------
@@ -122,8 +122,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         separations of companions in arcseconds
     instrname : string
         JWST science instrument name
-    apername : string
-        instrument aperture name (as represented in the SIAF)
+    aper : jwxml.Aperture object
+        Aperture as loaded from the instrument SIAF
     lambda_rad0 : float
         ecliptic longitude of quadrature with the sun, in radians,
         at the beginning of the year-long interval sampled by
@@ -179,13 +179,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     pa1_rad = pa1 * deg2rad  # companion 1
     pa2_rad = pa2 * deg2rad  # companion 2
     pa3_rad = pa3 * deg2rad  # companion 3
-
-    # Calculations
-    # -- Given the desired instrument, load its parameters
-    siaf_path = join(dirname(__file__), 'data', '{}_SIAF.xml'.format(instrname))
-    assert exists(siaf_path), 'no SIAF for {}'.format(instrname)
-    siaf = SIAF(instr=instrname, filename=siaf_path)
-    aper = siaf[apername]
 
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target

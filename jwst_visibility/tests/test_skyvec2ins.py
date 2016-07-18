@@ -2,6 +2,7 @@ from os.path import abspath, dirname, join, isdir
 import numpy as np
 
 from .. import skyvec2ins
+from ..gui import get_aperture
 
 # Magic numbers to match the exact inputs to the IDL code that
 # made these test reference outputs
@@ -81,6 +82,7 @@ def _compare_outputs(reference, computed):
 
 def test_fomalhaut():
     reference = _load_test_case('Fomalhaut')
+    aperture = get_aperture('NIRCam', 'NRCA2_MASK210R')
     computed = skyvec2ins.skyvec2ins(
         ra=344.41269,
         dec=-29.62224,
@@ -90,8 +92,7 @@ def test_fomalhaut():
         separation_as1=10,
         separation_as2=0,
         separation_as3=0,
-        instrname='NIRCam',
-        apername='NRCA2_MASK210R',
+        aper=aperture,
         lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
         nrolls=NROLLS,
@@ -101,6 +102,7 @@ def test_fomalhaut():
 
 def test_1RXSJ160929p1_210524():
     reference = _load_test_case('1RXSJ160929p1-210524')
+    aperture = get_aperture('NIRCam', 'NRCB3_MASKSWB')
     computed = skyvec2ins.skyvec2ins(
         ra=242.37628,
         dec=-21.08304,
@@ -110,8 +112,7 @@ def test_1RXSJ160929p1_210524():
         separation_as1=3,
         separation_as2=0,
         separation_as3=0,
-        instrname='NIRCam',
-        apername='NRCB3_MASKSWB',
+        aper=aperture,
         lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
         nrolls=NROLLS,
@@ -121,6 +122,7 @@ def test_1RXSJ160929p1_210524():
 
 def test_HR8799():
     reference = _load_test_case('HR8799')
+    aperture = get_aperture('MIRI', 'MIRIM_MASK1065')
     computed = skyvec2ins.skyvec2ins(
         ra=346.86965,
         dec=21.13425,
@@ -130,8 +132,7 @@ def test_HR8799():
         separation_as2=1,
         pa3=190,
         separation_as3=0.65,
-        instrname='MIRI',
-        apername='MIRIM_MASK1065',
+        aper=aperture,
         lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
         nrolls=NROLLS,
@@ -141,6 +142,7 @@ def test_HR8799():
 
 def test_NGC6543():
     reference = _load_test_case('NGC6543')
+    aperture = get_aperture('MIRI', 'MIRIM_MASKLYOT')
     computed = skyvec2ins.skyvec2ins(
         ra=269.63926,
         dec=66.63320,
@@ -150,8 +152,7 @@ def test_NGC6543():
         separation_as2=0,
         pa3=0,
         separation_as3=0,
-        instrname='MIRI',
-        apername='MIRIM_MASKLYOT',
+        aper=aperture,
         lambda_rad0=LAMBDA_RAD0,
         npoints=NPOINTS,
         nrolls=NROLLS,

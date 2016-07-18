@@ -142,9 +142,7 @@ class VisibilityCalculation(object):
             separation_as1=self.companions[0]['separation'],
             separation_as2=self.companions[1]['separation'],
             separation_as3=self.companions[2]['separation'],
-            # TODO pass Aperture object instead of instrument + apername
-            instrname=self.aperture.instrument,
-            apername=self.aperture.AperName,
+            aper=self.aperture,
             lambda_rad0=self.lambda_rad0,
             npoints=self.npoints,
             nrolls=self.nrolls
@@ -683,12 +681,7 @@ class VisibilityCalculator(object):
         self.root.config(cursor='wait')
         self.root.update()
 
-        # TODO we want to eventually pass jwxml.Aperture instances into the calculation
-        siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
-        assert os.path.exists(siaf_path), 'no SIAF for {} in {}'.format(instrname, siaf_path)
-        siaf = SIAF(instr=instrname, filename=siaf_path)
-        aper = siaf[apername]
-
+        aper = get_aperture(instrname, apername)
         npoints = 360
         nrolls = 20
 
