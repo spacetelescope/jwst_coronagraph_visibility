@@ -13,6 +13,7 @@ import os.path
 import datetime
 import re
 from collections import namedtuple
+from contextlib import contextmanager
 
 try:
     from urllib import quote
@@ -80,6 +81,17 @@ def get_aperture(instrname, apername):
     assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
     siaf = SIAF(instr=instrname, filename=siaf_path)
     return siaf[apername]
+
+@contextmanager
+def _busy_cursor(root):
+    try:
+        root.config(cursor='wait')
+    except TclError:
+        pass
+    root.update()
+    yield
+    root.config(cursor='')
+    root.update()
 
 class VisibilityCalculation(object):
     def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
@@ -605,19 +617,16 @@ class VisibilityCalculator(object):
             self.error_modal("Search query for SIMBAD must not be empty")
             return
 
-        self.root.config(cursor='wait')
-        self.root.update()
+        with _busy_cursor(self.root):
+            result = query_simbad(search_string.strip())
+            if result is None:
+                self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
+                return
 
-        result = query_simbad(search_string.strip())
-        if result is None:
-            self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
-            return
+            self.ra_value.set(str(result.ra))
+            self.dec_value.set(str(result.dec))
+            self.simbad_id.set(result.id)
 
-        self.ra_value.set(str(result.ra))
-        self.dec_value.set(str(result.dec))
-        self.simbad_id.set(result.id)
-        self.root.config(cursor='')
-        self.root.update()
 
     def update_companions(self):
         # handle disabling / enabling entries
@@ -678,39 +687,35 @@ class VisibilityCalculator(object):
         # busy cursor start
         self.update_button.config(state='disabled')
         self.progress.start()
-        self.root.config(cursor='wait')
-        self.root.update()
+        with _busy_cursor(self.root):
+            aper = get_aperture(instrname, apername)
+            npoints = 360
+            nrolls = 20
 
-        aper = get_aperture(instrname, apername)
-        npoints = 360
-        nrolls = 20
+            self.result = VisibilityCalculation(
+                ra,
+                dec,
+                [
+                    {'pa': pa1, 'separation': separation_as1},
+                    {'pa': pa2, 'separation': separation_as2},
+                    {'pa': pa3, 'separation': separation_as3},
+                ],
+                aper,
+                self.START_DATE,
+                npoints,
+                nrolls
+            )
+            self.result.calculate()
 
-        self.result = VisibilityCalculation(
-            ra,
-            dec,
-            [
-                {'pa': pa1, 'separation': separation_as1},
-                {'pa': pa2, 'separation': separation_as2},
-                {'pa': pa3, 'separation': separation_as3},
-            ],
-            aper,
-            self.START_DATE,
-            npoints,
-            nrolls
-        )
-        self.result.calculate()
+            self._clear_plot_overlay()
+            self._update_observability()
+            if self._pick_event_handler_id is None:
+                self._pick_event_handler_id = self.figure.canvas.mpl_connect('pick_event', self._on_pick)
+            self._update_detector()
+            self._canvas.show()
 
-        self._clear_plot_overlay()
-        self._update_observability()
-        if self._pick_event_handler_id is None:
-            self._pick_event_handler_id = self.figure.canvas.mpl_connect('pick_event', self._on_pick)
-        self._update_detector()
-        self._canvas.show()
-        # busy cursor end
         self.progress.stop()
         self.update_button.config(state='normal')
-        self.root.config(cursor='')
-        self.root.update()
 
     def _update_observability(self):
         days = self.result.days
