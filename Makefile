@@ -1,4 +1,4 @@
-app: clean test
+app: clean
 	pyinstaller run_jwst_visibility.spec
 
 clean:
