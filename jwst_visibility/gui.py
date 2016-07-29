@@ -34,6 +34,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import numpy as np
 import requests
+import requests.exceptions
 if getattr(sys, 'frozen', False):
     # we are running in a bundle
     bundle_dir = sys._MEIPASS
@@ -56,8 +57,10 @@ YELLOW_GGPLOT = '#FBC15E'
 GREEN_GGPLOT = '#8EBA42'
 PINK_GGPLOT = '#FFB5B8'
 
+QUERY_TIMEOUT_SEC = 1.0
+
 def query_simbad(query_string):
-    response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string))
+    response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     body = response.text
     ra = dec = canonical_id = None
     for line in body.split('\n'):
@@ -618,7 +621,12 @@ class VisibilityCalculator(object):
             return
 
         with _busy_cursor(self.root):
-            result = query_simbad(search_string.strip())
+            try:
+                result = query_simbad(search_string.strip())
+            except requests.exceptions.Timeout:
+                self.error_modal("Cannot reach SIMBAD! Check your network connection, or see if perhaps SIMBAD is down...")
+                return
+
             if result is None:
                 self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
                 return
