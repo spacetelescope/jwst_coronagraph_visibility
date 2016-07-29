@@ -17,7 +17,7 @@ The allowed pointing of JWST leads to target visibility that depends on ecliptic
 
 We stress that the TVC is designed to provide quick illustrations of the possible observable orientations for a given target. As such, the TVC rapidly approximates JWST’s pointing restrictions and **does not query the official JWST Proposal Constraint Generator (PCG)**. The TVC does not include detailed pointing restrictions like Earth and Moon avoidance, etc. Additionally, results may differ from official constraints by a degree or so. **Users should treat the results as close approximations.**
 
-Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (April 2016), the code includes its own copies of the `PRDDEVSOC-D-012` version of the NIRCam and MIRI SIAFs.
+Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (April 2016), the code includes its own copies of the PRDDEVSOC-D-012 version of the NIRCam and MIRI SIAFs.
 
 Installation
 ------------
@@ -99,10 +99,8 @@ pa1, pa2, pa3 : float
     position angles of companions in degrees east of north
 separation_as1, separation_as2, separation_as3 : float
     separations of companions in arcseconds
-instrname : string
-    JWST science instrument name
-apername : string
-    instrument aperture name (as represented in the SIAF)
+aper : jwxml.Aperture object
+    Aperture as loaded from the instrument SIAF
 lambda_rad0 : float
     ecliptic longitude of quadrature with the sun, in radians,
     at the beginning of the year-long interval sampled by
@@ -117,9 +115,9 @@ maxvroll : float
     maximum number of degrees positive or negative roll around
     the boresight to allow (as designed: 7.0)
 
-Note: `lambda_rad0` is the longitude of quadrature at
-day 0 of the code, so it should be 90º west of the
-solar ecliptic longitude on that date.
+Note: ``lambda_rad0`` is the longitude of quadrature at
+day 0 of the code, so it should be 90 deg W of the
+solar longitude.
 
 Returns
 ^^^^^^^

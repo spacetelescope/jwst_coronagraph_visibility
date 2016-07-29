@@ -120,8 +120,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         position angles of companions in degrees east of north
     separation_as1, separation_as2, separation_as3 : float
         separations of companions in arcseconds
-    instrname : string
-        JWST science instrument name
     aper : jwxml.Aperture object
         Aperture as loaded from the instrument SIAF
     lambda_rad0 : float
