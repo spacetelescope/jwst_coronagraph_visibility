@@ -146,9 +146,10 @@ The curved observation blocks shown in the middle panel of the previous figure l
 Appendix: Python API and Testing
 ================================
 
-Documentation on the (unsupported) Python API exposed by this module can be found in the docstrings for :func:`jwst_visibility.skyvec2ins.skyvec2ins`.
+Documentation on the (unsupported) Python API exposed by this module can be found in the docstrings for :func:`jwst_visibility.skyvec2ins.skyvec2ins`. There is also a bit of documentation on the development setup for this tool and its documentation in the ``docs/development.rst`` file.
 
 .. toctree::
    :maxdepth: 2
 
    api
+   development
