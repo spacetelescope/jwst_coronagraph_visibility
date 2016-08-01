@@ -26,7 +26,7 @@ The latest release of the Target Visibility Tool can be downloaded from https://
 
 If you prefer to install from source, or are not using macOS, we recommend installing Python with the conda package manager and using the `AstroConda <http://astroconda.readthedocs.io/en/latest/index.html>`_ package set supported by STScI. After following the `AstroConda installation instructions <http://astroconda.readthedocs.io/en/latest/installation.html>`_, the following command will install the JWST Target Visibility Tool:
 
-   pip install -e git+https://github.com/spacetelescope/jwst_visibility.git#egg=jwst-visibility
+   pip install "git+https://github.com/spacetelescope/jwst_visibility.git#egg=jwst-visibility"
 
 If you would rather not use AstroConda, read on.
 
