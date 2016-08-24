@@ -70,7 +70,7 @@ setup(
     install_requires=[
         'numpy>=1.9.0',
         'matplotlib>=1.4.2',
-        'requests>=2.8.1'
+        'requests>=2.8.1',
     ],
 
     # List additional groups of dependencies here (e.g. development

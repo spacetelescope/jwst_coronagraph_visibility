@@ -8,12 +8,8 @@ jwxml: Various Python classes for parsing JWST-related information in XML files
 """
 import numpy as np
 import matplotlib.pyplot as plt
-try:
-    from lxml import etree
-    HAVE_LXML = True
-except ImportError:
-    import xml.etree.cElementTree as etree
-    HAVE_LXML = False
+
+import xml.etree.cElementTree as etree
 
 import logging
 import unittest
@@ -686,19 +682,15 @@ class Test_SIAF(unittest.TestCase):
 # This wrapper does not currently provide full support for all the arguments as
 # lxml's iterchildren
 def iterchildren(element, tag=None):
-    if HAVE_LXML:
-        return element.iterchildren(tag)
-    else:
+    if tag is None:
+        return iter(element)
 
-        if tag is None:
-            return iter(element)
+    def _iterchildren():
+        for child in element:
+           if child.tag == tag:
+               yield child
 
-        def _iterchildren():
-            for child in element:
-               if child.tag == tag:
-                   yield child
-
-        return _iterchildren()
+    return _iterchildren()
 
 
 
