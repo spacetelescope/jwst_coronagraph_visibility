@@ -27,7 +27,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/stsci-riab/jwst_visibility',
+    url='https://github.com/spacetelescope/jwst_visibility',
 
     # Author details
     author='Space Telescope Science Institute',
@@ -52,7 +52,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
 
