@@ -178,24 +178,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     ra_rad = ra * deg2rad
     dec_rad = dec * deg2rad
     obliq_rad = obliq * deg2rad
-    pa_north_rad = 0.  # companion marking North
-    pa_east_rad = 90. * deg2rad  # companion marking East
-    pa1_rad = pa1 * deg2rad  # companion 1
-    pa2_rad = pa2 * deg2rad  # companion 2
-    pa3_rad = pa3 * deg2rad  # companion 3
-
-    # Calculate the (V2,V3) coordinates of the coronagraph center
-    # That's where we want to stick the target
-    # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
-    # locations on the detector (according to Colin Cox)
-    cordetcoords = np.array([aper.XDetRef, aper.YDetRef])
-    corscicoords = aper.Det2Sci(cordetcoords[0], cordetcoords[1])
-    coridlcoords = aper.Sci2Idl(corscicoords[0], corscicoords[1])
-    cortelcoords = aper.Idl2Tel(coridlcoords[0], coridlcoords[1])
-    # convert arcseconds to radians
-    cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
-    # At this point, we have the coronagraph mask location in
-    # science, telescope, and celestial coordinates
 
     # We want to know the PA of the V3 axis. A simple way to do this
     # would be to form the 3 telescope axes as normal unit vectors in Cartesian
@@ -219,7 +201,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # (alpha, delta) -> (lambda, beta)
     lambda_rad, beta_rad = ad2lb(pointing_rad[0], pointing_rad[1])  # first, convert to ecliptic coords
 
-    quadrature_lambda_rad = np.arange(npoints) / npoints * 2 * np.pi + lambda_rad0  # the ecliptic latitude of the direction of quadrature vs. time in steps of 1 degree
+    # the ecliptic latitude of the direction of quadrature vs. time in steps of 1 degree
+    quadrature_lambda_rad = np.arange(npoints) / npoints * 2 * np.pi + lambda_rad0
     j = np.where(quadrature_lambda_rad < 0)
     if len(j[0]) > 0:
         quadrature_lambda_rad[j] += 2 * np.pi
@@ -397,6 +380,73 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # So do this, we rotate the points by the the V3 PA, which is measured
     # relative to North. Then we shift them to the (V2,V3) location of the coronagraph center.
     #
+
+
+    # Determine when the target is observable
+    # we're going to explore other roll angles now, so
+    # these are going to be 2D arrays (roll angle, elongation)
+    vroll_rad = np.zeros((nrolls, npoints))
+    vroll_rad[:, :] = vroll[:, np.newaxis] * deg2rad
+    # vroll_rad is an array: nrolls x npoints
+    elongation_rad_arr = np.zeros((nrolls, npoints))
+    elongation_rad_arr[:, :] = elongation_rad[np.newaxis, :]
+    elongation_rad = elongation_rad_arr
+    # elongation_rad is now an array of npoints x nrolls
+    vpitch_rad = np.pi / 2 - elongation_rad  # definition change elong -> pitch
+    # JWST pointing restrictions are in terms of solar pitch and solar roll
+    sroll_rad = np.arcsin(np.sin(vroll_rad) * np.cos(vpitch_rad))
+    assert sroll_rad.shape == (nrolls, npoints)
+    spitch_rad = np.arctan(np.tan(vpitch_rad) / np.cos(vroll_rad))
+    assert spitch_rad.shape == (nrolls, npoints)
+    sroll = sroll_rad / deg2rad
+    spitch = spitch_rad / deg2rad
+
+    observable = np.zeros((nrolls, npoints), dtype=bool)
+
+    # sun pitch constrained to -45 to +5.2
+    mask = np.where(
+        (spitch < 2.5) &
+        (spitch >= -45.) &
+        (np.abs(sroll) <= 5.2)
+    )
+    observable[mask] = True
+    # personal communication Wayne Kinzel to Stark: (stark double checked with OBS mission req)
+    # there is a linearized region
+    mask2 = np.where(
+        (spitch >= 2.5) &
+        (spitch <= 5.2) &
+        (np.abs(sroll) <= ((3.5 - 5.2) / (5.2 - 2.5) * (spitch - 2.5) + 5.2))
+    )
+    observable[mask2] = True
+
+    x = np.arange(npoints) * (365.25 / npoints)  # days since launch
+
+    c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y = detector_transforms(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper)
+
+    return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
+            c1_x, c1_y,
+            c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
+
+def detector_transforms(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper):
+    pa_north_rad = 0.  # companion marking North
+    pa_east_rad = np.deg2rad(90.)  # companion marking East
+    pa1_rad = np.deg2rad(pa1) # companion 1
+    pa2_rad = np.deg2rad(pa2) # companion 2
+    pa3_rad = np.deg2rad(pa3) # companion 3
+
+    # Calculate the (V2,V3) coordinates of the coronagraph center
+    # That's where we want to stick the target
+    # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
+    # locations on the detector (according to Colin Cox)
+    cordetcoords = np.array([aper.XDetRef, aper.YDetRef])
+    corscicoords = aper.Det2Sci(cordetcoords[0], cordetcoords[1])
+    coridlcoords = aper.Sci2Idl(corscicoords[0], corscicoords[1])
+    cortelcoords = aper.Idl2Tel(coridlcoords[0], coridlcoords[1])
+    # convert arcseconds to radians
+    cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
+    # At this point, we have the coronagraph mask location in
+    # science, telescope, and celestial coordinates
+
     # BEGIN DETECTOR COORDS TRANSFORM SECTION
 
     # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
@@ -503,46 +553,4 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     e_y = refidlcoordsE[:, :, 1]
 
     # END OF DETECTOR POS SECTION
-
-    # Determine when the target is observable
-    # we're going to explore other roll angles now, so
-    # these are going to be 2D arrays (roll angle, elongation)
-    vroll_rad = np.zeros((nrolls, npoints))
-    vroll_rad[:, :] = vroll[:, np.newaxis] * deg2rad
-    # vroll_rad is an array: nrolls x npoints
-    elongation_rad_arr = np.zeros((nrolls, npoints))
-    elongation_rad_arr[:, :] = elongation_rad[np.newaxis, :]
-    elongation_rad = elongation_rad_arr
-    # elongation_rad is now an array of npoints x nrolls
-    vpitch_rad = np.pi / 2 - elongation_rad  # definition change elong -> pitch
-    # JWST pointing restrictions are in terms of solar pitch and solar roll
-    sroll_rad = np.arcsin(np.sin(vroll_rad) * np.cos(vpitch_rad))
-    assert sroll_rad.shape == (nrolls, npoints)
-    spitch_rad = np.arctan(np.tan(vpitch_rad) / np.cos(vroll_rad))
-    assert spitch_rad.shape == (nrolls, npoints)
-    sroll = sroll_rad / deg2rad
-    spitch = spitch_rad / deg2rad
-
-    observable = np.zeros((nrolls, npoints), dtype=bool)
-
-    # sun pitch constrained to -45 to +5.2
-    mask = np.where(
-        (spitch < 2.5) &
-        (spitch >= -45.) &
-        (np.abs(sroll) <= 5.2)
-    )
-    observable[mask] = True
-    # personal communication Wayne Kinzel to Stark: (stark double checked with OBS mission req)
-    # there is a linearized region
-    mask2 = np.where(
-        (spitch >= 2.5) &
-        (spitch <= 5.2) &
-        (np.abs(sroll) <= ((3.5 - 5.2) / (5.2 - 2.5) * (spitch - 2.5) + 5.2))
-    )
-    observable[mask2] = True
-
-    x = np.arange(npoints) * (365.25 / npoints)  # days since launch
-
-    return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
-            c1_x, c1_y,
-            c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
+    return c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y
