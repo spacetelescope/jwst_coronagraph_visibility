@@ -44,7 +44,7 @@ else:
 
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
-from .jwxml import SIAF
+from jwxml import SIAF
 from .skyvec2ins import skyvec2ins
 
 from pprint import pprint
