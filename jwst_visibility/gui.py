@@ -80,9 +80,9 @@ def query_simbad(query_string):
         return SimbadResult(ra=ra, dec=dec, id=canonical_id)
 
 def get_aperture(instrname, apername):
-    siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
-    assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
-    siaf = SIAF(instr=instrname, filename=siaf_path)
+    # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
+    # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
+    siaf = SIAF(instr=instrname)
     return siaf[apername]
 
 @contextmanager
