@@ -379,8 +379,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # The target & PA reference points are specified relative to North.
     # So do this, we rotate the points by the the V3 PA, which is measured
     # relative to North. Then we shift them to the (V2,V3) location of the coronagraph center.
-    #
-
 
     # Determine when the target is observable
     # we're going to explore other roll angles now, so
@@ -421,19 +419,33 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
 
     x = np.arange(npoints) * (365.25 / npoints)  # days since launch
 
-    c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y = detector_transforms(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper)
+    c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y = detector_transforms_2(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper)
 
     return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
             c1_x, c1_y,
             c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
 
-def detector_transforms(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper):
-    pa_north_rad = 0.  # companion marking North
-    pa_east_rad = np.deg2rad(90.)  # companion marking East
-    pa1_rad = np.deg2rad(pa1) # companion 1
-    pa2_rad = np.deg2rad(pa2) # companion 2
-    pa3_rad = np.deg2rad(pa3) # companion 3
+def detector_transforms_2(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper):
+    pa_sep_pairs = [
+        (pa1, separation_as1),
+        (pa2, separation_as2),
+        (pa3, separation_as3),
+        (0., 0.1),   # 0.1 arcsec at North for North vector overlay
+        (90., 0.1),  # 0.1 arcsec at East for East vector overlay
+    ]
+    results = []
+    for pa, sep in pa_sep_pairs:
+        x, y = detector_transforms_sub(
+            nrolls, npoints, roll_rad,
+            pa,
+            sep,
+            aper
+        )
+        results.extend((x, y))
+    return results
 
+def detector_transforms_sub(nrolls, npoints, roll_rad, pa1, separation_as1, aper):
+    pa1_rad = np.deg2rad(pa1) # companion 1
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
@@ -452,105 +464,34 @@ def detector_transforms(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1
     # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
     # companions relative to stars. This can be added to [ra,dec] of
     # stars to get absolute positions (approximately)
-
-    # tiny offset in north and east so they can be rotated identically to companions for plotting
-    dcoordsN_rad = (0.1 / 206264.806247) * np.array([np.sin(pa_north_rad), np.cos(pa_north_rad)])
-    dcoordsE_rad = (0.1 / 206264.806247) * np.array([np.sin(pa_east_rad), np.cos(pa_east_rad)])
-    # dcoords 1-3 are coords of companions
     dcoords1_rad = (separation_as1 / 206264.806247) * np.array([np.sin(pa1_rad), np.cos(pa1_rad)])
-    dcoords2_rad = (separation_as2 / 206264.806247) * np.array([np.sin(pa2_rad), np.cos(pa2_rad)])
-    dcoords3_rad = (separation_as3 / 206264.806247) * np.array([np.sin(pa3_rad), np.cos(pa3_rad)])
 
     # First, the rotation...
     targceloffset_rad = np.array([0, 0])  # assume telescope is pointed at star
     targteloffset_rad = np.zeros((nrolls, npoints, 2))
     targteloffset_rad[:, :, 0] = np.cos(roll_rad) * targceloffset_rad[0] - np.sin(roll_rad) * targceloffset_rad[1]
     targteloffset_rad[:, :, 1] = np.sin(roll_rad) * targceloffset_rad[0] + np.cos(roll_rad) * targceloffset_rad[1]
-    refceloffsetN_rad = dcoordsN_rad  # PA reference point
-    refceloffsetE_rad = dcoordsE_rad  # PA reference point
     refceloffset1_rad = dcoords1_rad  # PA reference point
-    refceloffset2_rad = dcoords2_rad  # PA reference point
-    refceloffset3_rad = dcoords3_rad  # PA reference point
-    refteloffsetN_rad = np.zeros((nrolls, npoints, 2))
-    refteloffsetE_rad = np.zeros((nrolls, npoints, 2))
     refteloffset1_rad = np.zeros((nrolls, npoints, 2))
-    refteloffset2_rad = np.zeros((nrolls, npoints, 2))
-    refteloffset3_rad = np.zeros((nrolls, npoints, 2))
-    refteloffsetN_rad[:, :, 0] = np.cos(roll_rad) * refceloffsetN_rad[0] - np.sin(roll_rad) * refceloffsetN_rad[1]
-    refteloffsetE_rad[:, :, 0] = np.cos(roll_rad) * refceloffsetE_rad[0] - np.sin(roll_rad) * refceloffsetE_rad[1]
     refteloffset1_rad[:, :, 0] = np.cos(roll_rad) * refceloffset1_rad[0] - np.sin(roll_rad) * refceloffset1_rad[1]
-    refteloffset2_rad[:, :, 0] = np.cos(roll_rad) * refceloffset2_rad[0] - np.sin(roll_rad) * refceloffset2_rad[1]
-    refteloffset3_rad[:, :, 0] = np.cos(roll_rad) * refceloffset3_rad[0] - np.sin(roll_rad) * refceloffset3_rad[1]
-    refteloffsetN_rad[:, :, 1] = np.sin(roll_rad) * refceloffsetN_rad[0] + np.cos(roll_rad) * refceloffsetN_rad[1]
-    refteloffsetE_rad[:, :, 1] = np.sin(roll_rad) * refceloffsetE_rad[0] + np.cos(roll_rad) * refceloffsetE_rad[1]
     refteloffset1_rad[:, :, 1] = np.sin(roll_rad) * refceloffset1_rad[0] + np.cos(roll_rad) * refceloffset1_rad[1]
-    refteloffset2_rad[:, :, 1] = np.sin(roll_rad) * refceloffset2_rad[0] + np.cos(roll_rad) * refceloffset2_rad[1]
-    refteloffset3_rad[:, :, 1] = np.sin(roll_rad) * refceloffset3_rad[0] + np.cos(roll_rad) * refceloffset3_rad[1]
-    # Now, the shift...
-    targtelcoords_rad = np.zeros((nrolls, npoints, 2))
-    targtelcoords_rad[:, :, 0] = targteloffset_rad[:, :, 0] + cortelcoords_rad[0]
-    targtelcoords_rad[:, :, 1] = targteloffset_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoordsN_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoordsE_rad = np.zeros((nrolls, npoints, 2))
+
     reftelcoords1_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoords2_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoords3_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoordsN_rad[:, :, 0] = refteloffsetN_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoordsE_rad[:, :, 0] = refteloffsetE_rad[:, :, 0] + cortelcoords_rad[0]
     reftelcoords1_rad[:, :, 0] = refteloffset1_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoords2_rad[:, :, 0] = refteloffset2_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoords3_rad[:, :, 0] = refteloffset3_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoordsN_rad[:, :, 1] = refteloffsetN_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoordsE_rad[:, :, 1] = refteloffsetE_rad[:, :, 1] + cortelcoords_rad[1]
     reftelcoords1_rad[:, :, 1] = refteloffset1_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoords2_rad[:, :, 1] = refteloffset2_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoords3_rad[:, :, 1] = refteloffset3_rad[:, :, 1] + cortelcoords_rad[1]
 
     # Transform from (v2,v3) telescope coordinates to science coordinates
-    targidlcoords = np.zeros((nrolls, npoints, 2))
-    for i in range(npoints):
-        for j in range(nrolls):
-            temptelcoords = np.array([targtelcoords_rad[j, i, 0], targtelcoords_rad[j, i, 1]]) * 206264.806247  # arcseconds
-            tempidlcoords = aper.Tel2Idl(temptelcoords[0], temptelcoords[1])
-            targidlcoords[j, i] = np.asarray(tempidlcoords)
-
-    refidlcoordsN = np.zeros((nrolls, npoints, 2))
-    refidlcoordsE = np.zeros((nrolls, npoints, 2))
     refidlcoords1 = np.zeros((nrolls, npoints, 2))
-    refidlcoords2 = np.zeros((nrolls, npoints, 2))
-    refidlcoords3 = np.zeros((nrolls, npoints, 2))
 
     for i in range(npoints):
         for j in range(nrolls):
-            temptelcoordsN = np.array([reftelcoordsN_rad[j, i, 0], reftelcoordsN_rad[j, i, 1]]) * 206264.806247  # arcseconds
-            temptelcoordsE = np.array([reftelcoordsE_rad[j, i, 0], reftelcoordsE_rad[j, i, 1]]) * 206264.806247  # arcseconds
             temptelcoords1 = np.array([reftelcoords1_rad[j,i,0], reftelcoords1_rad[j,i,1]]) * 206264.806247  # arcseconds
-            temptelcoords2 = np.array([reftelcoords2_rad[j,i,0], reftelcoords2_rad[j,i,1]]) * 206264.806247  # arcseconds
-            temptelcoords3 = np.array([reftelcoords3_rad[j,i,0], reftelcoords3_rad[j,i,1]]) * 206264.806247  # arcseconds
-
-            tempidlcoordsN = aper.Tel2Idl(temptelcoordsN[0], temptelcoordsN[1])
-            tempidlcoordsE = aper.Tel2Idl(temptelcoordsE[0], temptelcoordsE[1])
             tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
-            tempidlcoords2 = aper.Tel2Idl(temptelcoords2[0], temptelcoords2[1])
-            tempidlcoords3 = aper.Tel2Idl(temptelcoords3[0], temptelcoords3[1])
-
-            refidlcoordsN[j, i] = tempidlcoordsN
-            refidlcoordsE[j, i] = tempidlcoordsE
             refidlcoords1[j, i] = tempidlcoords1
-            refidlcoords2[j, i] = tempidlcoords2
-            refidlcoords3[j, i] = tempidlcoords3
 
     # Detector coordinates of star and companion
     c1_x = refidlcoords1[:, :, 0]
     c1_y = refidlcoords1[:, :, 1]
-    c2_x = refidlcoords2[:, :, 0]
-    c2_y = refidlcoords2[:, :, 1]
-    c3_x = refidlcoords3[:, :, 0]
-    c3_y = refidlcoords3[:, :, 1]
-    n_x = refidlcoordsN[:, :, 0]
-    n_y = refidlcoordsN[:, :, 1]
-    e_x = refidlcoordsE[:, :, 0]
-    e_y = refidlcoordsE[:, :, 1]
 
     # END OF DETECTOR POS SECTION
-    return c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y
+    return c1_x, c1_y
