@@ -419,13 +419,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
 
     x = np.arange(npoints) * (365.25 / npoints)  # days since launch
 
-    c1_x, c1_y, c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y = detector_transforms_2(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper)
-
-    return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
-            c1_x, c1_y,
-            c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
-
-def detector_transforms_2(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper):
     pa_sep_pairs = [
         (pa1, separation_as1),
         (pa2, separation_as2),
@@ -435,17 +428,17 @@ def detector_transforms_2(nrolls, npoints, roll_rad, pa1, pa2, pa3, separation_a
     ]
     results = []
     for pa, sep in pa_sep_pairs:
-        x, y = detector_transforms_sub(
+        idl_x, idl_y = detector_transform(
             nrolls, npoints, roll_rad,
             pa,
             sep,
             aper
         )
-        results.extend((x, y))
-    return results
+        results.extend((idl_x, idl_y))
+    return [x, observable.astype(np.uint8), elongation_rad, roll_rad] + results
 
-def detector_transforms_sub(nrolls, npoints, roll_rad, pa1, separation_as1, aper):
-    pa1_rad = np.deg2rad(pa1) # companion 1
+def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
+    pa_rad = np.deg2rad(pa) # companion 1
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
@@ -454,6 +447,7 @@ def detector_transforms_sub(nrolls, npoints, roll_rad, pa1, separation_as1, aper
     corscicoords = aper.Det2Sci(cordetcoords[0], cordetcoords[1])
     coridlcoords = aper.Sci2Idl(corscicoords[0], corscicoords[1])
     cortelcoords = aper.Idl2Tel(coridlcoords[0], coridlcoords[1])
+    cortelcoords = aper.Det2Tel(aper.XDetRef, aper.YDetRef)
     # convert arcseconds to radians
     cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
     # At this point, we have the coronagraph mask location in
@@ -464,13 +458,9 @@ def detector_transforms_sub(nrolls, npoints, roll_rad, pa1, separation_as1, aper
     # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
     # companions relative to stars. This can be added to [ra,dec] of
     # stars to get absolute positions (approximately)
-    dcoords1_rad = (separation_as1 / 206264.806247) * np.array([np.sin(pa1_rad), np.cos(pa1_rad)])
+    dcoords1_rad = (separation_as / 206264.806247) * np.array([np.sin(pa_rad), np.cos(pa_rad)])
 
     # First, the rotation...
-    targceloffset_rad = np.array([0, 0])  # assume telescope is pointed at star
-    targteloffset_rad = np.zeros((nrolls, npoints, 2))
-    targteloffset_rad[:, :, 0] = np.cos(roll_rad) * targceloffset_rad[0] - np.sin(roll_rad) * targceloffset_rad[1]
-    targteloffset_rad[:, :, 1] = np.sin(roll_rad) * targceloffset_rad[0] + np.cos(roll_rad) * targceloffset_rad[1]
     refceloffset1_rad = dcoords1_rad  # PA reference point
     refteloffset1_rad = np.zeros((nrolls, npoints, 2))
     refteloffset1_rad[:, :, 0] = np.cos(roll_rad) * refceloffset1_rad[0] - np.sin(roll_rad) * refceloffset1_rad[1]
