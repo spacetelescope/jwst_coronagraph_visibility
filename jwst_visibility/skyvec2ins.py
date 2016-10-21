@@ -47,7 +47,8 @@ def ad2lb(alpha_rad, delta_rad):
 
     beta_rad = np.arcsin(np.sin(delta_rad) * np.cos(obliq) - np.cos(delta_rad) * np.sin(obliq) * np.sin(alpha_rad))
     coslambda = np.cos(alpha_rad) * np.cos(delta_rad) / np.cos(beta_rad)
-    sinlambda = (np.sin(delta_rad) * np.sin(obliq) + np.cos(delta_rad) * np.cos(obliq) * np.sin(alpha_rad)) / np.cos(beta_rad)
+    sinlambda = (np.sin(delta_rad) * np.sin(obliq) +
+                 np.cos(delta_rad) * np.cos(obliq) * np.sin(alpha_rad)) / np.cos(beta_rad)
     lambda_rad = np.arctan2(sinlambda, coslambda)  # make sure we get the right quadrant
     lambda_rad = _wrap_to_2pi(lambda_rad)
     return lambda_rad, beta_rad
@@ -96,12 +97,13 @@ def lb2ad(lambda_rad, beta_rad):
     See Eq 4 in Leinert et al. 1998
     """
 
-    obliq = _tenv(23, 26, 21.45)     # J2000 obliquity of Earth in degrees
+    obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
     obliq *= np.pi / 180.
 
     delta = np.arcsin(np.sin(beta_rad) * np.cos(obliq) + np.cos(beta_rad) * np.sin(obliq) * np.sin(lambda_rad))
     cosalpha = np.cos(lambda_rad) * np.cos(beta_rad) / np.cos(delta)
-    sinalpha = (-np.sin(beta_rad) * np.sin(obliq) + np.cos(beta_rad) * np.cos(obliq) * np.sin(lambda_rad)) / np.cos(delta)
+    sinalpha = (-np.sin(beta_rad) * np.sin(obliq) +
+                np.cos(beta_rad) * np.cos(obliq) * np.sin(lambda_rad)) / np.cos(delta)
     alpha = np.arctan2(sinalpha, cosalpha)
     alpha = _wrap_to_2pi(alpha)
 
@@ -113,7 +115,8 @@ def _tenv(dd, mm, ss):
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
 
-def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
+def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0,
+               npoints=360, nrolls=14, maxvroll=7.0):
     """
     Parameters
     ----------
@@ -216,15 +219,15 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     assert elongation_rad.shape == (npoints,)
     assert inc_rad.shape == (npoints,)
 
-
     # Calculate celestial coordinates of V2 & V3 axis
     # First, calculate solar elongation & inclination
 
-    v3_elongation_rad = elongation_rad + (np.pi/2)
+    v3_elongation_rad = elongation_rad + (np.pi / 2)
     v3_inc_rad = inc_rad.copy()  # explicit copy -- does mutating this affect things later??
     j = np.where(v3_elongation_rad > np.pi)  # Make sure the solar elongation is between 0 - 180 degrees
     if len(j[0]) > 0:
-        v3_elongation_rad[j] = (2 * np.pi) - v3_elongation_rad[j]  # make sure all our angles follow standard definitions
+        # make sure all our angles follow standard definitions
+        v3_elongation_rad[j] = (2 * np.pi) - v3_elongation_rad[j]
         v3_inc_rad[j] = np.pi + inc_rad[j]
         v3_inc_rad %= 2 * np.pi
 
@@ -278,9 +281,9 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         [ux * uz, uy * uz, uz * uz]
     ])
     ucpm = np.array([
-        [  0, -uz,  uy],
-        [ uz,   0, -ux],
-        [-uy,  ux,   0]
+        [0, -uz, uy],
+        [uz, 0, -ux],
+        [-uy, ux, 0]
     ])
     ident = np.array([
         [1, 0, 0],
@@ -293,13 +296,12 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     for i in range(npoints):
         for j in range(nrolls):
             # a rotation matrix about the v1 axis...
-            rotation_matrix = cosvroll[j] * ident + sinvroll[j] * ucpm + (1-cosvroll[j]) * utensu
+            rotation_matrix = cosvroll[j] * ident + sinvroll[j] * ucpm + (1 - cosvroll[j]) * utensu
             # rotate those unit vectors
             # (dotting rotation_matrix . v1_unit_vec should reproduce
             # v1_unit_vec, so don't bother)
             v2_uva[:, j, i] = np.dot(rotation_matrix, v2_unit_vec[:, i])
             v3_uva[:, j, i] = np.dot(rotation_matrix, v3_unit_vec[:, i])
-
 
     # Now that we have the unit vectors at all vehicle roll angles and elongations,
     # we use the dot product method of finding the PA
@@ -329,8 +331,9 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # TODO refactor this to remove loops
     for i in range(npoints):
         for j in range(nrolls):
-            # j, j transposed from idl bc of indexing
-            north_vec_all_rolls[:, j, i] = north_vec  # just for making this the right shape to go with npoints and nrolls
+            # i, j transposed from IDL bc of indexing
+            # just for making this the right shape to go with npoints and nrolls
+            north_vec_all_rolls[:, j, i] = north_vec
     # Subtract off the unit vector pointing to the star to determine the direction of the E vector at the star
     east_vec = unit_vec3 - unit_vec
     east_vec /= np.sqrt(np.sum(east_vec * east_vec))  # make it a unit vector
@@ -355,9 +358,9 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # We're not quite done...we need to know the orientation...
     # Now translate the v2 vector into ecliptic coords to determine quadrant of PA
     # ~~~ this might have to do with when JWST has to flip to reach things?
-    v2_delta_rad = np.arcsin(v2_uva[:,:,2])
-    v2_sinalpha = v2_uva[:,:,1] / np.cos(v2_delta_rad)
-    v2_cosalpha = v2_uva[:,:,0] / np.cos(v2_delta_rad)
+    v2_delta_rad = np.arcsin(v2_uva[:, :, 2])
+    v2_sinalpha = v2_uva[:, :, 1] / np.cos(v2_delta_rad)
+    v2_cosalpha = v2_uva[:, :, 0] / np.cos(v2_delta_rad)
     v2_alpha_rad = np.arctan2(v2_sinalpha, v2_cosalpha)
     j = np.where(v2_alpha_rad < 0)
     if len(j[0]) > 0:
@@ -416,7 +419,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         (pa1, separation_as1),
         (pa2, separation_as2),
         (pa3, separation_as3),
-        (0., 0.1),   # 0.1 arcsec at North for North vector overlay
+        (0., 0.1),  # 0.1 arcsec at North for North vector overlay
         (90., 0.1),  # 0.1 arcsec at East for East vector overlay
     ]
     results = []
@@ -432,7 +435,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
 
 
 def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
-    pa_rad = np.deg2rad(pa) # companion 1
+    pa_rad = np.deg2rad(pa)  # companion 1
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
@@ -465,7 +468,10 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
 
     for i in range(npoints):
         for j in range(nrolls):
-            temptelcoords1 = np.array([reftelcoords1_rad[j, i, 0], reftelcoords1_rad[j, i, 1]]) * 206264.806247  # arcseconds
+            temptelcoords1 = np.array([
+                reftelcoords1_rad[j, i, 0],
+                reftelcoords1_rad[j, i, 1]
+            ]) * 206264.806247  # arcseconds
             tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
             refidlcoords1[j, i] = tempidlcoords1
 
