@@ -45,7 +45,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from jwxml import SIAF
-from .skyvec2ins import skyvec2ins, sun_ecliptic_longitude
+from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
 
 from pprint import pprint
 
@@ -454,10 +454,43 @@ class VisibilityCalculator(object):
         dec_entry.grid(column=1, row=4, sticky=(N, W, E), columnspan=2)
         ttk.Label(frame, text="º (decimal)").grid(column=3, row=4)
 
+        # Lambda and beta (ecliptic longitude and latitude)
+        lambda_label = ttk.Label(frame, text="Lambda:")
+        lambda_label.grid(column=0, row=5, sticky=(N, W))
+        self.lambda_value = StringVar()
+        lambda_entry = ttk.Entry(frame, textvariable=self.lambda_value)
+        lambda_entry.grid(column=1, row=5, sticky=(N, W, E), columnspan=2)
+        ttk.Label(frame, text="º (decimal)").grid(column=3, row=5)
+
+        beta_label = ttk.Label(frame, text="Beta:")
+        beta_label.grid(column=0, row=6, sticky=(N, W))
+        self.beta_value = StringVar()
+        beta_entry = ttk.Entry(frame, textvariable=self.beta_value)
+        beta_entry.grid(column=1, row=6, sticky=(N, W, E), columnspan=2)
+        ttk.Label(frame, text="º (decimal)").grid(column=3, row=6)
+
         # Clear the SIMBAD ID when user edits RA or Dec
-        def _user_edited_coords(*args):
+        def _clear_simbad_id(*_):
             self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
-        self.ra_value.trace('w', _user_edited_coords)
+
+        def _update_ecliptic(*_):
+            ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
+            ecliptic_lambda, ecliptic_beta = ad2lb(np.deg2rad(ra), np.deg2rad(dec))
+            self.lambda_value.set(np.rad2deg(ecliptic_lambda))
+            self.beta_value.set(np.rad2deg(ecliptic_beta))
+
+        def _update_equatorial(*_):
+            ecliptic_lambda, ecliptic_beta = float(self.lambda_value.get()), float(self.beta_value.get())
+            ra_rad, dec_rad = lb2ad(np.deg2rad(ecliptic_lambda), np.deg2rad(ecliptic_beta))
+            self.ra_value.set(np.rad2deg(ra_rad))
+            self.dec_value.set(np.rad2deg(dec_rad))
+
+        for var in (self.ra_value, self.dec_value, self.lambda_value, self.beta_value):
+            var.trace('w', _clear_simbad_id)
+        for var in (self.lambda_value, self.beta_value):
+            var.trace('w', _update_equatorial)
+        for var in (self.ra_value, self.dec_value):
+            var.trace('w', _update_ecliptic)
 
         frame.columnconfigure(1, weight=1)
 
