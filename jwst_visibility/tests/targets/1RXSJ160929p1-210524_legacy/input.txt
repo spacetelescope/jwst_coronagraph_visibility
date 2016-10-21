@@ -1,0 +1,6 @@
+target: 1RXS J160929.1-210524
+RA: 242.37628
+DEC: -21.08304
+companion1 PA: 20
+companion1 sep: 3
+mode: NIRCam B, SWB
