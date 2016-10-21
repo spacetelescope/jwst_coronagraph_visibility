@@ -173,14 +173,9 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         center in "Idl" (ideal) frame coordinates
     """
 
-    # Constants
-    deg2rad = np.pi / 180.
-    obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
-
     # Conversions
-    ra_rad = ra * deg2rad
-    dec_rad = dec * deg2rad
-    obliq_rad = obliq * deg2rad
+    ra_rad = np.deg2rad(ra)
+    dec_rad = np.deg2rad(dec)
 
     # We want to know the PA of the V3 axis. A simple way to do this
     # would be to form the 3 telescope axes as normal unit vectors in Cartesian
@@ -271,8 +266,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # Now make unit vector arrays including all vehicle roll angles
     # Make the rotation matrix about the v1 axis
     vroll = np.linspace(-maxvroll, maxvroll, nrolls)
-    cosvroll = np.cos(vroll * deg2rad)
-    sinvroll = np.sin(vroll * deg2rad)
+    cosvroll = np.cos(np.deg2rad(vroll))
+    sinvroll = np.sin(np.deg2rad(vroll))
 
     # Find the v1 axis in cartesian space
     utensu = np.array([
@@ -380,7 +375,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # we're going to explore other roll angles now, so
     # these are going to be 2D arrays (roll angle, elongation)
     vroll_rad = np.zeros((nrolls, npoints))
-    vroll_rad[:, :] = vroll[:, np.newaxis] * deg2rad
+    vroll_rad[:, :] = np.deg2rad(vroll)[:, np.newaxis]
     # vroll_rad is an array: nrolls x npoints
     elongation_rad_arr = np.zeros((nrolls, npoints))
     elongation_rad_arr[:, :] = elongation_rad[np.newaxis, :]
@@ -392,8 +387,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     assert sroll_rad.shape == (nrolls, npoints)
     spitch_rad = np.arctan(np.tan(vpitch_rad) / np.cos(vroll_rad))
     assert spitch_rad.shape == (nrolls, npoints)
-    sroll = sroll_rad / deg2rad
-    spitch = spitch_rad / deg2rad
+    sroll = np.rad2deg(sroll_rad)
+    spitch = np.rad2deg(spitch_rad)
 
     observable = np.zeros((nrolls, npoints), dtype=bool)
 
