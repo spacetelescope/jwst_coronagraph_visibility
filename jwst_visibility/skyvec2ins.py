@@ -250,9 +250,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         np.sin(delta_rad)
     ])
 
-    ux = unit_vec[0]
-    uy = unit_vec[1]
-    uz = unit_vec[2]
+    ux, uy, uz = unit_vec
 
     v1_unit_vec = np.zeros((3, npoints))
     # a bunch of v1 unit vectors, all the same, for each elongation
@@ -273,7 +271,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
 
     # Now make unit vector arrays including all vehicle roll angles
     # Make the rotation matrix about the v1 axis
-    vroll = (2 * np.arange(nrolls, dtype=np.float64) / (nrolls - 1) - 1) * maxvroll
+    vroll = np.linspace(-maxvroll, maxvroll, nrolls)
     cosvroll = np.cos(vroll * deg2rad)
     sinvroll = np.sin(vroll * deg2rad)
 
