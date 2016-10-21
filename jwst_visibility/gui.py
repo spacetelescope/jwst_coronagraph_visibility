@@ -105,13 +105,6 @@ class VisibilityCalculation(object):
         self.npoints = npoints
         self.nrolls = nrolls
         self.start_date = start_date
-        lambda_sun = sun_ecliptic_longitude(start_date)
-
-        # Per Chris Stark:
-        # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
-        # > So it should be 90 deg W of the solar longitude.
-        # West is negative, so subtract 90 from the angle (in deg) and convert to radians.
-        self.lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
         # Outputs
         self.days = None
@@ -150,7 +143,7 @@ class VisibilityCalculation(object):
             separation_as2=self.companions[1]['separation'],
             separation_as3=self.companions[2]['separation'],
             aper=self.aperture,
-            lambda_rad0=self.lambda_rad0,
+            start_date=self.start_date,
             npoints=self.npoints,
             nrolls=self.nrolls
         )

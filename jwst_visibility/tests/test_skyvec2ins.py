@@ -7,17 +7,9 @@ from ..gui import get_aperture
 
 TARGETS_DIR = abspath(join(dirname(__file__), 'targets'))
 START_DATE = datetime.datetime(2018, 10, 1)
-
-# Magic numbers to match the exact inputs to the IDL code that
-# made these test reference outputs
 NPOINTS = 360
 NROLLS = 20
 MAXVROLL = 10.0
-LAMBDA_RAD0 = np.deg2rad(-83+180)
-
-# TODO change skyvec2ins to accept date not lambda_rad0
-new_lambda_sun = skyvec2ins.sun_ecliptic_longitude(START_DATE)
-new_lambda_rad0 = np.deg2rad(new_lambda_sun - 90)
 
 def _save_test_case(test_case_name, aperture,
                     ra, dec, pa1, pa2, pa3,
@@ -46,7 +38,7 @@ def _save_test_case(test_case_name, aperture,
         pa3=pa3,
         separation_as3=separation_as3,
         aper=aperture,
-        lambda_rad0=new_lambda_rad0,
+        start_date=START_DATE,
         npoints=NPOINTS,
         nrolls=NROLLS,
         maxvroll=MAXVROLL,
@@ -192,7 +184,7 @@ def test_fomalhaut():
         separation_as2=0,
         separation_as3=0,
         aper=aperture,
-        lambda_rad0=new_lambda_rad0,
+        start_date=START_DATE,
         npoints=NPOINTS,
         nrolls=NROLLS,
         maxvroll=MAXVROLL,
@@ -212,7 +204,7 @@ def test_1RXSJ160929p1_210524():
         separation_as2=0,
         separation_as3=0,
         aper=aperture,
-        lambda_rad0=new_lambda_rad0,
+        start_date=START_DATE,
         npoints=NPOINTS,
         nrolls=NROLLS,
         maxvroll=MAXVROLL,
@@ -232,7 +224,7 @@ def test_HR8799():
         pa3=190,
         separation_as3=0.65,
         aper=aperture,
-        lambda_rad0=new_lambda_rad0,
+        start_date=START_DATE,
         npoints=NPOINTS,
         nrolls=NROLLS,
         maxvroll=MAXVROLL,
@@ -252,87 +244,7 @@ def test_NGC6543():
         pa3=0,
         separation_as3=0,
         aper=aperture,
-        lambda_rad0=new_lambda_rad0,
-        npoints=NPOINTS,
-        nrolls=NROLLS,
-        maxvroll=MAXVROLL,
-    )
-    _compare_outputs(reference, computed)
-
-def test_fomalhaut_legacy():
-    reference = _load_test_case('Fomalhaut_legacy')
-    aperture = get_aperture('NIRCam', 'NRCA2_MASK210R')
-    computed = skyvec2ins.skyvec2ins(
-        ra=344.41269,
-        dec=-29.62224,
-        pa1=325,
-        pa2=0,
-        pa3=0,
-        separation_as1=10,
-        separation_as2=0,
-        separation_as3=0,
-        aper=aperture,
-        lambda_rad0=LAMBDA_RAD0,
-        npoints=NPOINTS,
-        nrolls=NROLLS,
-        maxvroll=MAXVROLL,
-    )
-    _compare_outputs(reference, computed)
-
-def test_1RXSJ160929p1_210524_legacy():
-    reference = _load_test_case('1RXSJ160929p1-210524_legacy')
-    aperture = get_aperture('NIRCam', 'NRCB3_MASKSWB')
-    computed = skyvec2ins.skyvec2ins(
-        ra=242.37628,
-        dec=-21.08304,
-        pa1=20,
-        pa2=0,
-        pa3=0,
-        separation_as1=3,
-        separation_as2=0,
-        separation_as3=0,
-        aper=aperture,
-        lambda_rad0=LAMBDA_RAD0,
-        npoints=NPOINTS,
-        nrolls=NROLLS,
-        maxvroll=MAXVROLL,
-    )
-    _compare_outputs(reference, computed)
-
-def test_HR8799_legacy():
-    reference = _load_test_case('HR8799_legacy')
-    aperture = get_aperture('MIRI', 'MIRIM_MASK1065')
-    computed = skyvec2ins.skyvec2ins(
-        ra=346.86965,
-        dec=21.13425,
-        pa1=45,
-        separation_as1=1.7,
-        pa2=325,
-        separation_as2=1,
-        pa3=190,
-        separation_as3=0.65,
-        aper=aperture,
-        lambda_rad0=LAMBDA_RAD0,
-        npoints=NPOINTS,
-        nrolls=NROLLS,
-        maxvroll=MAXVROLL,
-    )
-    _compare_outputs(reference, computed)
-
-def test_NGC6543_legacy():
-    reference = _load_test_case('NGC6543_legacy')
-    aperture = get_aperture('MIRI', 'MIRIM_MASKLYOT')
-    computed = skyvec2ins.skyvec2ins(
-        ra=269.63926,
-        dec=66.63320,
-        pa1=0,
-        separation_as1=0,
-        pa2=0,
-        separation_as2=0,
-        pa3=0,
-        separation_as3=0,
-        aper=aperture,
-        lambda_rad0=LAMBDA_RAD0,
+        start_date=START_DATE,
         npoints=NPOINTS,
         nrolls=NROLLS,
         maxvroll=MAXVROLL,

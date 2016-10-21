@@ -131,7 +131,10 @@ def _tenv(dd, mm, ss):
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
 
-def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0,
+def skyvec2ins(ra, dec,
+               pa1, pa2, pa3,
+               separation_as1, separation_as2, separation_as3,
+               aper, start_date,
                npoints=360, nrolls=15, maxvroll=7.0):
     """
     Parameters
@@ -146,16 +149,14 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         separations of companions in arcseconds
     aper : jwxml.Aperture object
         Aperture as loaded from the instrument SIAF
-    lambda_rad0 : float
-        ecliptic longitude of quadrature with the sun, in radians,
-        at the beginning of the year-long interval sampled by
-        this function (indirectly, this specifies the start date).
+    start_date : datetime.datetime
+        Start date of the year-long interval evaluated by skyvec2ins
     npoints : int
         number of points to sample in the year-long interval
         to find observable dates (default: 360)
     nrolls : int
         number of roll angles in the allowed roll angle range to
-        sample at each date (default: 14)
+        sample at each date (default: 15)
     maxvroll : float
         maximum number of degrees positive or negative roll around
         the boresight to allow (as designed: 7.0)
@@ -188,6 +189,12 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         of a reference "north" vector and "east" vector from the
         center in "Idl" (ideal) frame coordinates
     """
+    # Per Chris Stark:
+    # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
+    # > So it should be 90 deg W of the solar longitude.
+    # West is negative, so subtract 90 from the angle (in deg) and convert to radians.
+    lambda_sun = sun_ecliptic_longitude(start_date)
+    lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
     # Conversions
     ra_rad = np.deg2rad(ra)
