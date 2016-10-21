@@ -132,7 +132,7 @@ def _tenv(dd, mm, ss):
 
 
 def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0,
-               npoints=360, nrolls=14, maxvroll=7.0):
+               npoints=360, nrolls=15, maxvroll=7.0):
     """
     Parameters
     ----------
