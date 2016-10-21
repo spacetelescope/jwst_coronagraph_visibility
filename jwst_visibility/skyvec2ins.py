@@ -251,23 +251,19 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     ])
 
     ux, uy, uz = unit_vec
+    # alias for clarity below:
+    v1_unit_vec = unit_vec
 
-    v1_unit_vec = np.zeros((3, npoints))
-    # a bunch of v1 unit vectors, all the same, for each elongation
-    v1_unit_vec[:, :] = unit_vec[:, np.newaxis]
-    assert v1_unit_vec.shape == (3, 360)
     # Here are the V3 unit vectors for each elongation
     v3_unit_vec = np.array([
         np.cos(v3_delta_rad) * np.cos(v3_alpha_rad),
         np.cos(v3_delta_rad) * np.sin(v3_alpha_rad),
         np.sin(v3_delta_rad)
     ])
-    assert v1_unit_vec.shape == (3, 360)
     # Take the cross product to get v2 (v2 = v3 x v1)
     v2_unit_vec = np.zeros((3, len(v3_delta_rad)))
     for i in range(len(v3_delta_rad)):
-        v2_unit_vec[:, i] = np.cross(v3_unit_vec[:, i], v1_unit_vec[:, i])
-    assert v1_unit_vec.shape == (3, 360)
+        v2_unit_vec[:, i] = np.cross(v3_unit_vec[:, i], v1_unit_vec)
 
     # Now make unit vector arrays including all vehicle roll angles
     # Make the rotation matrix about the v1 axis
@@ -291,7 +287,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         [0, 1, 0],
         [0, 0, 1]
     ])
-    v1_uva = np.zeros((3, nrolls, npoints))
+
     v2_uva = np.zeros((3, nrolls, npoints))
     v3_uva = np.zeros((3, nrolls, npoints))
     for i in range(npoints):
@@ -299,8 +295,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
             # a rotation matrix about the v1 axis...
             rotation_matrix = cosvroll[j] * ident + sinvroll[j] * ucpm + (1-cosvroll[j]) * utensu
             # rotate those unit vectors
-            v1_uva[:, j, i] = np.dot(rotation_matrix, v1_unit_vec[:, i])
-            assert np.allclose(np.dot(rotation_matrix, v1_unit_vec[:, i]), v1_unit_vec[:, i])
+            # (dotting rotation_matrix . v1_unit_vec should reproduce
+            # v1_unit_vec, so don't bother)
             v2_uva[:, j, i] = np.dot(rotation_matrix, v2_unit_vec[:, i])
             v3_uva[:, j, i] = np.dot(rotation_matrix, v3_unit_vec[:, i])
 
@@ -309,7 +305,7 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # we use the dot product method of finding the PA
     # Let's add a tiny displacement in the north and east directions and
     # make unit vectors out of them...
-    ddelta_rad = 1. / (1000. * 60. * 60. * 180. / np.pi) # 1 milliarcsec in rad
+    ddelta_rad = 1. / (1000. * 60. * 60. * 180. / np.pi)  # 1 milliarcsec in rad
     dalpha_rad = 1. / (1000. * 60. * 60. * 180. / np.pi)
     # First, get vectors from the origin to the tiny displacements
     #  ... a vector in the E direction
