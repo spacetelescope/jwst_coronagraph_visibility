@@ -27,6 +27,9 @@ constraints by a degree or so. Users should treat the results as close
 approximations.
 """
 from __future__ import print_function, division
+
+import datetime
+
 import numpy as np
 
 
@@ -34,6 +37,19 @@ def _wrap_to_2pi(scalar_or_arr):
     """Offsets angles outside 0 <= x <= 2 * pi to lie within the interval"""
     return np.asarray(scalar_or_arr) % (2 * np.pi)
 
+def sun_ecliptic_longitude(start_date):
+    """Compute ecliptic longitude of sun on start_date
+    using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
+    """
+    n_days = (start_date - datetime.datetime(2000, 1, 1, 12, 00)).days
+    mean_longitude = 280.459 + 0.98564736 * n_days
+    mean_anomaly = 357.529 + 0.98560028 * n_days
+    mean_longitude %= 360.
+    mean_anomaly %= 360.
+    lambda_sun = (mean_longitude +
+                  1.915 * np.sin(np.deg2rad(mean_anomaly)) +
+                  0.020 * np.sin(2 * np.deg2rad(mean_anomaly)))
+    return lambda_sun
 
 def ad2lb(alpha_rad, delta_rad):
     """

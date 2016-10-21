@@ -45,7 +45,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from jwxml import SIAF
-from .skyvec2ins import skyvec2ins
+from .skyvec2ins import skyvec2ins, sun_ecliptic_longitude
 
 from pprint import pprint
 
@@ -105,15 +105,7 @@ class VisibilityCalculation(object):
         self.npoints = npoints
         self.nrolls = nrolls
         self.start_date = start_date
-
-        # compute ecliptic longitude of sun on start_date
-        # using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
-        n_days = (start_date - datetime.datetime(2000, 1, 1, 12, 00)).days
-        mean_longitude = 280.459 + 0.98564736 * n_days
-        mean_anomaly = 357.529 + 0.98560028 * n_days
-        mean_longitude %= 360.
-        mean_anomaly %= 360.
-        lambda_sun = mean_longitude + 1.915 * np.sin(np.deg2rad(mean_anomaly)) + 0.020 * np.sin(2 * np.deg2rad(mean_anomaly))
+        lambda_sun = sun_ecliptic_longitude(start_date)
 
         # Per Chris Stark:
         # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
