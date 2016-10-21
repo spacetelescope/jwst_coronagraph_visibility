@@ -368,7 +368,6 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     j = np.where(v2_alpha_rad < 0)
     if len(j[0]) > 0:
         v2_alpha_rad[j] += 2 * np.pi
-    v2_beta_rad = np.arcsin(np.sin(v2_delta_rad) * np.cos(obliq_rad) - np.cos(v2_delta_rad) * np.sin(obliq_rad) * np.sin(v2_alpha_rad))
 
     # Finally, we have the approximate PA of the V3 axis!
     # ---------------------
@@ -437,16 +436,13 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         results.extend((idl_x, idl_y))
     return [x, observable.astype(np.uint8), elongation_rad, roll_rad] + results
 
+
 def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
     pa_rad = np.deg2rad(pa) # companion 1
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
     # locations on the detector (according to Colin Cox)
-    cordetcoords = np.array([aper.XDetRef, aper.YDetRef])
-    corscicoords = aper.Det2Sci(cordetcoords[0], cordetcoords[1])
-    coridlcoords = aper.Sci2Idl(corscicoords[0], corscicoords[1])
-    cortelcoords = aper.Idl2Tel(coridlcoords[0], coridlcoords[1])
     cortelcoords = aper.Det2Tel(aper.XDetRef, aper.YDetRef)
     # convert arcseconds to radians
     cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
@@ -475,7 +471,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
 
     for i in range(npoints):
         for j in range(nrolls):
-            temptelcoords1 = np.array([reftelcoords1_rad[j,i,0], reftelcoords1_rad[j,i,1]]) * 206264.806247  # arcseconds
+            temptelcoords1 = np.array([reftelcoords1_rad[j, i, 0], reftelcoords1_rad[j, i, 1]]) * 206264.806247  # arcseconds
             tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
             refidlcoords1[j, i] = tempidlcoords1
 
