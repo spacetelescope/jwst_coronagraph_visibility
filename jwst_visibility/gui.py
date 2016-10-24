@@ -218,10 +218,10 @@ class VisibilityCalculator(object):
         self.root.after_idle(self.root.call, 'wm', 'attributes', '.', '-topmost', False)
         self.root.mainloop()
 
-    def error_modal(self, message):
+    def error_modal(self, message, title="Error"):
         modal = Toplevel()
         modal.geometry('+400+400')
-        modal.title("Error")
+        modal.title(title)
         frame = ttk.Frame(modal, borderwidth=10)
         frame.grid(column=0, row=0, sticky=(N, S, E, W))
         msg = ttk.Label(frame, text=message)
@@ -232,6 +232,14 @@ class VisibilityCalculator(object):
         modal.transient(self.root)
         modal.grab_set()
         self.root.wait_window(modal)
+
+    def show_about(self):
+        self.error_modal(
+            "The JWST Coronagraph Visibility tool provides approximate\n"
+            "pointing restriction information for planning coronagraphic observations.\n\n"
+            "For help, contact the helpdesk: help@stsci.edu",
+            title="About"
+        )
 
     def _build(self):
         # improve visual feedback for entries in 'disabled' state
@@ -249,6 +257,16 @@ class VisibilityCalculator(object):
 
         self.main = ttk.Frame(self.root)
         self.main.grid(column=0, row=0, sticky=(N, W, E, S))
+
+        menubar = Menu(self.root)
+        appmenu = Menu(menubar, name='apple')
+        examples_menu = Menu(menubar)
+        self._build_examples_menu(examples_menu)
+        menubar.add_cascade(menu=appmenu)
+        menubar.add_cascade(menu=examples_menu, label='Examples')
+        appmenu.add_command(label='About', command=self.show_about)
+        appmenu.add_separator()
+        self.root['menu'] = menubar
 
         # Target, companion, and detector controls
         self.controls_frame = ttk.Frame(self.main, width=240)
@@ -320,6 +338,11 @@ class VisibilityCalculator(object):
         # self._build_examples_frame(examples_frame)
         # examples_frame.grid(column=0, row=7, sticky=(W, E, S), pady=10)
         frame.columnconfigure(0, weight=1)
+
+    def _build_examples_menu(self, menu):
+        menu.add_command(label="Fomalhaut", command=self._ex_fomalhaut)
+        menu.add_command(label="1RXS J160929.1-210524", command=self._ex_1RXSJ160929p1_210524)
+        menu.add_command(label="HR 8799", command=self._ex_HR8799)
 
     def _build_examples_frame(self, frame):
         ttk.Button(
