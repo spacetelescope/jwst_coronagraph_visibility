@@ -59,6 +59,9 @@ PINK_GGPLOT = '#FFB5B8'
 
 QUERY_TIMEOUT_SEC = 1.0
 
+DEFAULT_NPOINTS = 360
+DEFAULT_NROLLS = 20
+
 def query_simbad(query_string):
     response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     body = response.text
@@ -239,6 +242,7 @@ class VisibilityCalculator(object):
             foreground=[('disabled','#a3a3a3')]
         )
         self.root.minsize(width=1366, height=500)
+
         # ensure resizing happens:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -247,7 +251,7 @@ class VisibilityCalculator(object):
         self.main.grid(column=0, row=0, sticky=(N, W, E, S))
 
         # Target, companion, and detector controls
-        self.controls_frame = ttk.Frame(self.main, width=210)
+        self.controls_frame = ttk.Frame(self.main, width=240)
         self.controls_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         self._build_controls(self.controls_frame)
         self.controls_frame.grid_propagate(False)
@@ -271,16 +275,20 @@ class VisibilityCalculator(object):
         self._build_simbad_lookup(simbad_frame)
         simbad_frame.grid(column=0, row=0, sticky=(N, W, E, S))
 
+        date_frame = ttk.LabelFrame(frame, text="Date and Sampling")
+        self._build_date_controls(date_frame)
+        date_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+
         # Companions
         companion_frame = ttk.LabelFrame(frame, text="Companions")
         self._build_companion_controls(companion_frame)
-        companion_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+        companion_frame.grid(column=0, row=2, sticky=(N, W, E, S))
         companion_frame.grid_configure(pady=15)
 
         # Instrument/Mask selector
         instrument_mask_frame = ttk.Frame(frame)
         self._build_instrument_mask_controls(instrument_mask_frame)
-        instrument_mask_frame.grid(column=0, row=2, sticky=(N, W, E, S))
+        instrument_mask_frame.grid(column=0, row=3, sticky=(N, W, E, S))
         instrument_mask_frame.grid_configure(pady=15)
 
         # < > Aperture PA  < > V3 PA
@@ -300,17 +308,17 @@ class VisibilityCalculator(object):
             variable=self.pa_coords
         )
         v3_pa_radio.grid(column=1, row=0)
-        pa_control_frame.grid(column=0, row=3)
+        pa_control_frame.grid(column=0, row=4)
 
         # Update Plot
         self.update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
-        self.update_button.grid(column=0, row=4, sticky=(E, W))
+        self.update_button.grid(column=0, row=5, sticky=(E, W))
         self.progress = ttk.Progressbar(frame, orient='horizontal', mode='indeterminate')
-        self.progress.grid(column=0, row=5, sticky=(E, W))
-
-        examples_frame = ttk.LabelFrame(frame, text="Examples")
-        self._build_examples_frame(examples_frame)
-        examples_frame.grid(column=0, row=6, sticky=(W, E, S), pady=10)
+        self.progress.grid(column=0, row=6, sticky=(E, W))
+        #
+        # examples_frame = ttk.LabelFrame(frame, text="Examples")
+        # self._build_examples_frame(examples_frame)
+        # examples_frame.grid(column=0, row=7, sticky=(W, E, S), pady=10)
         frame.columnconfigure(0, weight=1)
 
     def _build_examples_frame(self, frame):
@@ -421,6 +429,28 @@ class VisibilityCalculator(object):
         self.simbad_id.set("HR 8799")
         self.update_plot()
 
+    def _build_date_controls(self, frame):
+        date_label = ttk.Label(frame, text="Start date: October 1,")
+        date_label.grid(column=0, row=0, sticky=(N, W))
+
+        self.year_value = StringVar()
+        today = datetime.datetime.today()
+        this_year = today.year
+        start_year = max(this_year, 2018)
+        self.year_value.set(start_year)
+        year_entry = ttk.Entry(frame, textvariable=self.year_value, width=10)
+        year_entry.grid(column=1, row=0, sticky=(N, E, W))
+
+        ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=1, sticky=(N, W))
+        self.npoints_value = StringVar()
+        self.npoints_value.set(DEFAULT_NPOINTS)
+        ttk.Entry(frame, textvariable=self.npoints_value, width=10).grid(column=1, row=1, sticky=(N, E, W))
+
+        self.nrolls_value = StringVar()
+        ttk.Label(frame, text="Rolls checked:").grid(column=0, row=2, sticky=(N, W))
+        self.nrolls_value.set(DEFAULT_NROLLS)
+        ttk.Entry(frame, textvariable=self.nrolls_value, width=10).grid(column=1, row=2, sticky=(N, E, W))
+
     def _build_simbad_lookup(self, frame):
         # SIMBAD lookup
         simbad_label = ttk.Label(frame, text="SIMBAD Target Resolver")
@@ -441,7 +471,7 @@ class VisibilityCalculator(object):
 
         # RA and Dec
         ra_label = ttk.Label(frame, text="RA:")
-        ra_label.grid(column=0, row=3, sticky=(N, W))
+        ra_label.grid(column=0, row=3, sticky=(N, W), columnspan=3)
         self.ra_value = StringVar()
         ra_entry = ttk.Entry(frame, textvariable=self.ra_value)
         ra_entry.grid(column=1, row=3, sticky=(N, W, E), columnspan=2)
@@ -455,41 +485,31 @@ class VisibilityCalculator(object):
         ttk.Label(frame, text="º (decimal)").grid(column=3, row=4)
 
         # Lambda and beta (ecliptic longitude and latitude)
-        lambda_label = ttk.Label(frame, text="Lambda:")
-        lambda_label.grid(column=0, row=5, sticky=(N, W))
-        self.lambda_value = StringVar()
-        lambda_entry = ttk.Entry(frame, textvariable=self.lambda_value)
-        lambda_entry.grid(column=1, row=5, sticky=(N, W, E), columnspan=2)
-        ttk.Label(frame, text="º (decimal)").grid(column=3, row=5)
-
-        beta_label = ttk.Label(frame, text="Beta:")
-        beta_label.grid(column=0, row=6, sticky=(N, W))
-        self.beta_value = StringVar()
-        beta_entry = ttk.Entry(frame, textvariable=self.beta_value)
-        beta_entry.grid(column=1, row=6, sticky=(N, W, E), columnspan=2)
-        ttk.Label(frame, text="º (decimal)").grid(column=3, row=6)
+        ecliptic_label = ttk.Label(frame, text="Ecliptic coordinates:")
+        ecliptic_label.grid(column=0, row=5, sticky=(N, W), columnspan=4)
+        self.ecliptic_value = StringVar()
+        ecliptic_display = ttk.Label(frame, textvariable=self.ecliptic_value)
+        ecliptic_display.grid(column=0, row=6, sticky=(N, W, E), columnspan=4)
 
         # Clear the SIMBAD ID when user edits RA or Dec
         def _clear_simbad_id(*_):
             self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
 
         def _update_ecliptic(*_):
-            ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
+            try:
+                 ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
+            except ValueError:
+                self.ecliptic_value.set('')
+                return
             ecliptic_lambda, ecliptic_beta = ad2lb(np.deg2rad(ra), np.deg2rad(dec))
-            self.lambda_value.set(np.rad2deg(ecliptic_lambda))
-            self.beta_value.set(np.rad2deg(ecliptic_beta))
+            ecliptic_display_val = '(l, b) = ({:1.4f}º, {:1.4f}º)'.format(
+                np.rad2deg(ecliptic_lambda),
+                np.rad2deg(ecliptic_beta)
+            )
+            self.ecliptic_value.set(ecliptic_display_val)
 
-        def _update_equatorial(*_):
-            ecliptic_lambda, ecliptic_beta = float(self.lambda_value.get()), float(self.beta_value.get())
-            ra_rad, dec_rad = lb2ad(np.deg2rad(ecliptic_lambda), np.deg2rad(ecliptic_beta))
-            self.ra_value.set(np.rad2deg(ra_rad))
-            self.dec_value.set(np.rad2deg(dec_rad))
-
-        for var in (self.ra_value, self.dec_value, self.lambda_value, self.beta_value):
-            var.trace('w', _clear_simbad_id)
-        for var in (self.lambda_value, self.beta_value):
-            var.trace('w', _update_equatorial)
         for var in (self.ra_value, self.dec_value):
+            var.trace('w', _clear_simbad_id)
             var.trace('w', _update_ecliptic)
 
         frame.columnconfigure(1, weight=1)
@@ -715,8 +735,9 @@ class VisibilityCalculator(object):
         self.progress.start()
         with _busy_cursor(self.root):
             aper = get_aperture(instrname, apername)
-            npoints = 360
-            nrolls = 20
+            # TODO make dynamic
+            npoints = DEFAULT_NPOINTS
+            nrolls = DEFAULT_NROLLS
 
             self.result = VisibilityCalculation(
                 ra,
@@ -1046,6 +1067,7 @@ class VisibilityCalculator(object):
                 self._mask_artist = self.detector_ax.add_artist(mask)
             else:
                 raise RuntimeError("Invalid mask!")
+
 
 
 def run():
