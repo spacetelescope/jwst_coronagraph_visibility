@@ -170,7 +170,7 @@ class VisibilityCalculator(object):
     NIRCAM_A = 'NIRCam Channel A'
     NIRCAM_B = 'NIRCam Channel B'
     MIRI = 'MIRI'
-    INSTRUMENTS = [NIRCAM_A, NIRCAM_B, MIRI]
+    INSTRUMENTS = [NIRCAM_A, MIRI]
     NIRCAM_A_APERNAMES = [
         'NRCA2_MASK210R',
         'NRCA5_MASK335R',
@@ -193,13 +193,11 @@ class VisibilityCalculator(object):
     ]
     INSTRUMENT_TO_APERNAMES = {
         NIRCAM_A: NIRCAM_A_APERNAMES,
-        NIRCAM_B: NIRCAM_B_APERNAMES,
         MIRI: MIRI_APERNAMES
     }
     APERTURE_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
-    START_DATE = datetime.datetime(2018, 10, 1, 12, 00)
 
     def __init__(self):
         self.root = Tk()
@@ -210,6 +208,7 @@ class VisibilityCalculator(object):
             self.root.destroy()
 
         self.root.protocol("WM_DELETE_WINDOW", close_app)
+        self.start_year = max(datetime.datetime.today().year, 2018)
         self._build()
 
     def start(self):
@@ -249,7 +248,7 @@ class VisibilityCalculator(object):
             background=[('disabled','#d9d9d9'),],
             foreground=[('disabled','#a3a3a3')]
         )
-        self.root.minsize(width=1366, height=500)
+        self.root.minsize(width=1366, height=680)
 
         # ensure resizing happens:
         self.root.columnconfigure(0, weight=1)
@@ -293,20 +292,16 @@ class VisibilityCalculator(object):
         self._build_simbad_lookup(simbad_frame)
         simbad_frame.grid(column=0, row=0, sticky=(N, W, E, S))
 
-        date_frame = ttk.LabelFrame(frame, text="Date and Sampling")
-        self._build_date_controls(date_frame)
-        date_frame.grid(column=0, row=1, sticky=(N, W, E, S))
-
         # Companions
         companion_frame = ttk.LabelFrame(frame, text="Companions")
         self._build_companion_controls(companion_frame)
-        companion_frame.grid(column=0, row=2, sticky=(N, W, E, S))
+        companion_frame.grid(column=0, row=1, sticky=(N, W, E, S))
         companion_frame.grid_configure(pady=15)
 
         # Instrument/Mask selector
         instrument_mask_frame = ttk.Frame(frame)
         self._build_instrument_mask_controls(instrument_mask_frame)
-        instrument_mask_frame.grid(column=0, row=3, sticky=(N, W, E, S))
+        instrument_mask_frame.grid(column=0, row=2, sticky=(N, W, E, S))
         instrument_mask_frame.grid_configure(pady=15)
 
         # < > Aperture PA  < > V3 PA
@@ -326,7 +321,12 @@ class VisibilityCalculator(object):
             variable=self.pa_coords
         )
         v3_pa_radio.grid(column=1, row=0)
-        pa_control_frame.grid(column=0, row=4)
+        pa_control_frame.grid(column=0, row=3)
+
+        date_frame = ttk.LabelFrame(frame, text="Date and Sampling")
+        self._build_date_controls(date_frame)
+        date_frame.grid(column=0, row=4, sticky=(N, W, E, S))
+        date_frame.grid_configure(pady=15)
 
         # Update Plot
         self.update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
@@ -457,22 +457,19 @@ class VisibilityCalculator(object):
         date_label.grid(column=0, row=0, sticky=(N, W))
 
         self.year_value = StringVar()
-        today = datetime.datetime.today()
-        this_year = today.year
-        start_year = max(this_year, 2018)
-        self.year_value.set(start_year)
-        year_entry = ttk.Entry(frame, textvariable=self.year_value, width=10)
-        year_entry.grid(column=1, row=0, sticky=(N, E, W))
+        self.year_value.set(self.start_year)
+        year_label = ttk.Label(frame, textvariable=self.year_value, width=5)
+        year_label.grid(column=1, row=0, sticky=(N, E, W))
 
         ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=1, sticky=(N, W))
         self.npoints_value = StringVar()
         self.npoints_value.set(DEFAULT_NPOINTS)
-        ttk.Entry(frame, textvariable=self.npoints_value, width=10).grid(column=1, row=1, sticky=(N, E, W))
+        ttk.Entry(frame, textvariable=self.npoints_value, width=5).grid(column=1, row=1, sticky=(N, E, W))
 
         self.nrolls_value = StringVar()
         ttk.Label(frame, text="Rolls checked:").grid(column=0, row=2, sticky=(N, W))
         self.nrolls_value.set(DEFAULT_NROLLS)
-        ttk.Entry(frame, textvariable=self.nrolls_value, width=10).grid(column=1, row=2, sticky=(N, E, W))
+        ttk.Entry(frame, textvariable=self.nrolls_value, width=5).grid(column=1, row=2, sticky=(N, E, W))
 
     def _build_simbad_lookup(self, frame):
         # SIMBAD lookup
@@ -722,6 +719,20 @@ class VisibilityCalculator(object):
         if dec > 90 or dec < -90:
             self.error_modal("Declination must be between -90 and 90 degrees")
             return
+        try:
+            npoints = int(self.npoints_value.get())
+            nrolls = int(self.nrolls_value.get())
+        except ValueError:
+            self.error_modal("Number of points and roll angle sampling must be integers")
+            return
+
+        try:
+            start_year = int(self.year_value.get())
+            if start_year < 2000:
+                raise ValueError("sun_ecliptic_longitude works for years after 2000 only")
+            start_date = datetime.datetime(start_year, 10, 1)
+        except ValueError:
+            self.error_modal("Supply a four-digit year after 2000")
 
         # ugly loop unroll for the 3 companions
         shown, pa, sep = self.companions[0]
@@ -747,10 +758,12 @@ class VisibilityCalculator(object):
             separation_as3 = 0.0
 
         instrument = self.instrument_value.get()
-        if instrument in (self.NIRCAM_A, self.NIRCAM_B):
+        if instrument == self.NIRCAM_A:
             instrname = 'NIRCam'
-        else:
+        elif instrument == self.MIRI:
             instrname = 'MIRI'
+        else:
+            raise Exception("Unsupported instrument!")
         apername = self.apername_value.get()
 
         # busy cursor start
@@ -758,10 +771,6 @@ class VisibilityCalculator(object):
         self.progress.start()
         with _busy_cursor(self.root):
             aper = get_aperture(instrname, apername)
-            # TODO make dynamic
-            npoints = DEFAULT_NPOINTS
-            nrolls = DEFAULT_NROLLS
-
             self.result = VisibilityCalculation(
                 ra,
                 dec,
@@ -771,7 +780,7 @@ class VisibilityCalculator(object):
                     {'pa': pa3, 'separation': separation_as3},
                 ],
                 aper,
-                self.START_DATE,
+                start_date,
                 npoints,
                 nrolls
             )
@@ -830,7 +839,7 @@ class VisibilityCalculator(object):
 
         mask = observable != 0
         # there might be a better way to get a 'days' the right shape
-        days_for_all_rolls = np.repeat(days[np.newaxis,:], 20, axis=0)
+        days_for_all_rolls = np.repeat(days[np.newaxis,:], self.result.nrolls, axis=0)
         days_for_all_rolls[self.result.observable == 0] = np.nan
         theta[self.result.observable == 0] = np.nan
         # TODO there should be a more elegant way to hold on to the actual plotted arrays
@@ -840,7 +849,7 @@ class VisibilityCalculator(object):
         self._pa_series = ax.scatter(days_for_all_rolls, theta, color=pa_color, label=pa_label, picker=True)
 
         ax.set_xlim(0, 366)
-        ax.set_xlabel('Days since Oct 1 2018')
+        ax.set_xlabel('Days since Oct 1 {}'.format(self.result.start_date.year))
         legend = ax.legend(
             (elongation_line, observable_series, self._pa_series),
             ('Solar elongation', 'Observable elongations', pa_label),
