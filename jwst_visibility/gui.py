@@ -45,7 +45,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from jwxml import SIAF
-from .skyvec2ins import skyvec2ins
+from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
 
 from pprint import pprint
 
@@ -58,6 +58,9 @@ GREEN_GGPLOT = '#8EBA42'
 PINK_GGPLOT = '#FFB5B8'
 
 QUERY_TIMEOUT_SEC = 1.0
+
+DEFAULT_NPOINTS = 360
+DEFAULT_NROLLS = 20
 
 def query_simbad(query_string):
     response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
@@ -80,9 +83,9 @@ def query_simbad(query_string):
         return SimbadResult(ra=ra, dec=dec, id=canonical_id)
 
 def get_aperture(instrname, apername):
-    siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
-    assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
-    siaf = SIAF(instr=instrname, filename=siaf_path)
+    # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
+    # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
+    siaf = SIAF(instr=instrname)
     return siaf[apername]
 
 @contextmanager
@@ -105,21 +108,6 @@ class VisibilityCalculation(object):
         self.npoints = npoints
         self.nrolls = nrolls
         self.start_date = start_date
-
-        # compute ecliptic longitude of sun on start_date
-        # using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
-        n_days = (start_date - datetime.datetime(2000, 1, 1, 12, 00)).days
-        mean_longitude = 280.459 + 0.98564736 * n_days
-        mean_anomaly = 357.529 + 0.98560028 * n_days
-        mean_longitude %= 360.
-        mean_anomaly %= 360.
-        lambda_sun = mean_longitude + 1.915 * np.sin(np.deg2rad(mean_anomaly)) + 0.020 * np.sin(2 * np.deg2rad(mean_anomaly))
-
-        # Per Chris Stark:
-        # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
-        # > So it should be 90 deg W of the solar longitude.
-        # West is negative, so subtract 90 from the angle (in deg) and convert to radians.
-        self.lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
         # Outputs
         self.days = None
@@ -158,7 +146,7 @@ class VisibilityCalculation(object):
             separation_as2=self.companions[1]['separation'],
             separation_as3=self.companions[2]['separation'],
             aper=self.aperture,
-            lambda_rad0=self.lambda_rad0,
+            start_date=self.start_date,
             npoints=self.npoints,
             nrolls=self.nrolls
         )
@@ -182,7 +170,7 @@ class VisibilityCalculator(object):
     NIRCAM_A = 'NIRCam Channel A'
     NIRCAM_B = 'NIRCam Channel B'
     MIRI = 'MIRI'
-    INSTRUMENTS = [NIRCAM_A, NIRCAM_B, MIRI]
+    INSTRUMENTS = [NIRCAM_A, MIRI]
     NIRCAM_A_APERNAMES = [
         'NRCA2_MASK210R',
         'NRCA5_MASK335R',
@@ -205,13 +193,11 @@ class VisibilityCalculator(object):
     ]
     INSTRUMENT_TO_APERNAMES = {
         NIRCAM_A: NIRCAM_A_APERNAMES,
-        NIRCAM_B: NIRCAM_B_APERNAMES,
         MIRI: MIRI_APERNAMES
     }
     APERTURE_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
-    START_DATE = datetime.datetime(2018, 10, 1, 12, 00)
 
     def __init__(self):
         self.root = Tk()
@@ -222,6 +208,7 @@ class VisibilityCalculator(object):
             self.root.destroy()
 
         self.root.protocol("WM_DELETE_WINDOW", close_app)
+        self.start_year = max(datetime.datetime.today().year, 2018)
         self._build()
 
     def start(self):
@@ -230,10 +217,10 @@ class VisibilityCalculator(object):
         self.root.after_idle(self.root.call, 'wm', 'attributes', '.', '-topmost', False)
         self.root.mainloop()
 
-    def error_modal(self, message):
+    def error_modal(self, message, title="Error"):
         modal = Toplevel()
         modal.geometry('+400+400')
-        modal.title("Error")
+        modal.title(title)
         frame = ttk.Frame(modal, borderwidth=10)
         frame.grid(column=0, row=0, sticky=(N, S, E, W))
         msg = ttk.Label(frame, text=message)
@@ -245,6 +232,14 @@ class VisibilityCalculator(object):
         modal.grab_set()
         self.root.wait_window(modal)
 
+    def show_about(self):
+        self.error_modal(
+            "The JWST Coronagraph Visibility tool provides approximate\n"
+            "pointing restriction information for planning coronagraphic observations.\n\n"
+            "For help, contact the helpdesk: help@stsci.edu",
+            title="About"
+        )
+
     def _build(self):
         # improve visual feedback for entries in 'disabled' state
         self.style = ttk.Style()
@@ -253,7 +248,8 @@ class VisibilityCalculator(object):
             background=[('disabled','#d9d9d9'),],
             foreground=[('disabled','#a3a3a3')]
         )
-        self.root.minsize(width=1366, height=500)
+        self.root.minsize(width=1366, height=680)
+
         # ensure resizing happens:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -261,8 +257,18 @@ class VisibilityCalculator(object):
         self.main = ttk.Frame(self.root)
         self.main.grid(column=0, row=0, sticky=(N, W, E, S))
 
+        menubar = Menu(self.root)
+        appmenu = Menu(menubar, name='apple')
+        examples_menu = Menu(menubar)
+        self._build_examples_menu(examples_menu)
+        menubar.add_cascade(menu=appmenu)
+        menubar.add_cascade(menu=examples_menu, label='Examples')
+        appmenu.add_command(label='About', command=self.show_about)
+        appmenu.add_separator()
+        self.root['menu'] = menubar
+
         # Target, companion, and detector controls
-        self.controls_frame = ttk.Frame(self.main, width=210)
+        self.controls_frame = ttk.Frame(self.main, width=240)
         self.controls_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         self._build_controls(self.controls_frame)
         self.controls_frame.grid_propagate(False)
@@ -317,16 +323,26 @@ class VisibilityCalculator(object):
         v3_pa_radio.grid(column=1, row=0)
         pa_control_frame.grid(column=0, row=3)
 
+        date_frame = ttk.LabelFrame(frame, text="Date and Sampling")
+        self._build_date_controls(date_frame)
+        date_frame.grid(column=0, row=4, sticky=(N, W, E, S))
+        date_frame.grid_configure(pady=15)
+
         # Update Plot
         self.update_button = ttk.Button(frame, text="Update Plot", command=self.update_plot)
-        self.update_button.grid(column=0, row=4, sticky=(E, W))
+        self.update_button.grid(column=0, row=5, sticky=(E, W))
         self.progress = ttk.Progressbar(frame, orient='horizontal', mode='indeterminate')
-        self.progress.grid(column=0, row=5, sticky=(E, W))
-
-        examples_frame = ttk.LabelFrame(frame, text="Examples")
-        self._build_examples_frame(examples_frame)
-        examples_frame.grid(column=0, row=6, sticky=(W, E, S), pady=10)
+        self.progress.grid(column=0, row=6, sticky=(E, W))
+        #
+        # examples_frame = ttk.LabelFrame(frame, text="Examples")
+        # self._build_examples_frame(examples_frame)
+        # examples_frame.grid(column=0, row=7, sticky=(W, E, S), pady=10)
         frame.columnconfigure(0, weight=1)
+
+    def _build_examples_menu(self, menu):
+        menu.add_command(label="Fomalhaut", command=self._ex_fomalhaut)
+        menu.add_command(label="1RXS J160929.1-210524", command=self._ex_1RXSJ160929p1_210524)
+        menu.add_command(label="HR 8799", command=self._ex_HR8799)
 
     def _build_examples_frame(self, frame):
         ttk.Button(
@@ -436,6 +452,25 @@ class VisibilityCalculator(object):
         self.simbad_id.set("HR 8799")
         self.update_plot()
 
+    def _build_date_controls(self, frame):
+        date_label = ttk.Label(frame, text="Start date: October 1,")
+        date_label.grid(column=0, row=0, sticky=(N, W))
+
+        self.year_value = StringVar()
+        self.year_value.set(self.start_year)
+        year_label = ttk.Label(frame, textvariable=self.year_value, width=5)
+        year_label.grid(column=1, row=0, sticky=(N, E, W))
+
+        ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=1, sticky=(N, W))
+        self.npoints_value = StringVar()
+        self.npoints_value.set(DEFAULT_NPOINTS)
+        ttk.Entry(frame, textvariable=self.npoints_value, width=5).grid(column=1, row=1, sticky=(N, E, W))
+
+        self.nrolls_value = StringVar()
+        ttk.Label(frame, text="Rolls checked:").grid(column=0, row=2, sticky=(N, W))
+        self.nrolls_value.set(DEFAULT_NROLLS)
+        ttk.Entry(frame, textvariable=self.nrolls_value, width=5).grid(column=1, row=2, sticky=(N, E, W))
+
     def _build_simbad_lookup(self, frame):
         # SIMBAD lookup
         simbad_label = ttk.Label(frame, text="SIMBAD Target Resolver")
@@ -456,7 +491,7 @@ class VisibilityCalculator(object):
 
         # RA and Dec
         ra_label = ttk.Label(frame, text="RA:")
-        ra_label.grid(column=0, row=3, sticky=(N, W))
+        ra_label.grid(column=0, row=3, sticky=(N, W), columnspan=3)
         self.ra_value = StringVar()
         ra_entry = ttk.Entry(frame, textvariable=self.ra_value)
         ra_entry.grid(column=1, row=3, sticky=(N, W, E), columnspan=2)
@@ -469,10 +504,33 @@ class VisibilityCalculator(object):
         dec_entry.grid(column=1, row=4, sticky=(N, W, E), columnspan=2)
         ttk.Label(frame, text="º (decimal)").grid(column=3, row=4)
 
+        # Lambda and beta (ecliptic longitude and latitude)
+        ecliptic_label = ttk.Label(frame, text="Ecliptic coordinates:")
+        ecliptic_label.grid(column=0, row=5, sticky=(N, W), columnspan=4)
+        self.ecliptic_value = StringVar()
+        ecliptic_display = ttk.Label(frame, textvariable=self.ecliptic_value)
+        ecliptic_display.grid(column=0, row=6, sticky=(N, W, E), columnspan=4)
+
         # Clear the SIMBAD ID when user edits RA or Dec
-        def _user_edited_coords(*args):
+        def _clear_simbad_id(*_):
             self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
-        self.ra_value.trace('w', _user_edited_coords)
+
+        def _update_ecliptic(*_):
+            try:
+                 ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
+            except ValueError:
+                self.ecliptic_value.set('')
+                return
+            ecliptic_lambda, ecliptic_beta = ad2lb(np.deg2rad(ra), np.deg2rad(dec))
+            ecliptic_display_val = '(l, b) = ({:1.4f}º, {:1.4f}º)'.format(
+                np.rad2deg(ecliptic_lambda),
+                np.rad2deg(ecliptic_beta)
+            )
+            self.ecliptic_value.set(ecliptic_display_val)
+
+        for var in (self.ra_value, self.dec_value):
+            var.trace('w', _clear_simbad_id)
+            var.trace('w', _update_ecliptic)
 
         frame.columnconfigure(1, weight=1)
 
@@ -661,6 +719,20 @@ class VisibilityCalculator(object):
         if dec > 90 or dec < -90:
             self.error_modal("Declination must be between -90 and 90 degrees")
             return
+        try:
+            npoints = int(self.npoints_value.get())
+            nrolls = int(self.nrolls_value.get())
+        except ValueError:
+            self.error_modal("Number of points and roll angle sampling must be integers")
+            return
+
+        try:
+            start_year = int(self.year_value.get())
+            if start_year < 2000:
+                raise ValueError("sun_ecliptic_longitude works for years after 2000 only")
+            start_date = datetime.datetime(start_year, 10, 1)
+        except ValueError:
+            self.error_modal("Supply a four-digit year after 2000")
 
         # ugly loop unroll for the 3 companions
         shown, pa, sep = self.companions[0]
@@ -686,10 +758,12 @@ class VisibilityCalculator(object):
             separation_as3 = 0.0
 
         instrument = self.instrument_value.get()
-        if instrument in (self.NIRCAM_A, self.NIRCAM_B):
+        if instrument == self.NIRCAM_A:
             instrname = 'NIRCam'
-        else:
+        elif instrument == self.MIRI:
             instrname = 'MIRI'
+        else:
+            raise Exception("Unsupported instrument!")
         apername = self.apername_value.get()
 
         # busy cursor start
@@ -697,9 +771,6 @@ class VisibilityCalculator(object):
         self.progress.start()
         with _busy_cursor(self.root):
             aper = get_aperture(instrname, apername)
-            npoints = 360
-            nrolls = 20
-
             self.result = VisibilityCalculation(
                 ra,
                 dec,
@@ -709,7 +780,7 @@ class VisibilityCalculator(object):
                     {'pa': pa3, 'separation': separation_as3},
                 ],
                 aper,
-                self.START_DATE,
+                start_date,
                 npoints,
                 nrolls
             )
@@ -768,7 +839,7 @@ class VisibilityCalculator(object):
 
         mask = observable != 0
         # there might be a better way to get a 'days' the right shape
-        days_for_all_rolls = np.repeat(days[np.newaxis,:], 20, axis=0)
+        days_for_all_rolls = np.repeat(days[np.newaxis,:], self.result.nrolls, axis=0)
         days_for_all_rolls[self.result.observable == 0] = np.nan
         theta[self.result.observable == 0] = np.nan
         # TODO there should be a more elegant way to hold on to the actual plotted arrays
@@ -778,7 +849,7 @@ class VisibilityCalculator(object):
         self._pa_series = ax.scatter(days_for_all_rolls, theta, color=pa_color, label=pa_label, picker=True)
 
         ax.set_xlim(0, 366)
-        ax.set_xlabel('Days since Oct 1 2018')
+        ax.set_xlabel('Days since Oct 1 {}'.format(self.result.start_date.year))
         legend = ax.legend(
             (elongation_line, observable_series, self._pa_series),
             ('Solar elongation', 'Observable elongations', pa_label),
@@ -1028,6 +1099,7 @@ class VisibilityCalculator(object):
                 self._mask_artist = self.detector_ax.add_artist(mask)
             else:
                 raise RuntimeError("Invalid mask!")
+
 
 
 def run():

@@ -27,6 +27,9 @@ constraints by a degree or so. Users should treat the results as close
 approximations.
 """
 from __future__ import print_function, division
+
+import datetime
+
 import numpy as np
 
 
@@ -34,6 +37,19 @@ def _wrap_to_2pi(scalar_or_arr):
     """Offsets angles outside 0 <= x <= 2 * pi to lie within the interval"""
     return np.asarray(scalar_or_arr) % (2 * np.pi)
 
+def sun_ecliptic_longitude(start_date):
+    """Compute ecliptic longitude of sun on start_date
+    using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
+    """
+    n_days = (start_date - datetime.datetime(2000, 1, 1, 12, 00)).days
+    mean_longitude = 280.459 + 0.98564736 * n_days
+    mean_anomaly = 357.529 + 0.98560028 * n_days
+    mean_longitude %= 360.
+    mean_anomaly %= 360.
+    lambda_sun = (mean_longitude +
+                  1.915 * np.sin(np.deg2rad(mean_anomaly)) +
+                  0.020 * np.sin(2 * np.deg2rad(mean_anomaly)))
+    return lambda_sun
 
 def ad2lb(alpha_rad, delta_rad):
     """
@@ -47,7 +63,8 @@ def ad2lb(alpha_rad, delta_rad):
 
     beta_rad = np.arcsin(np.sin(delta_rad) * np.cos(obliq) - np.cos(delta_rad) * np.sin(obliq) * np.sin(alpha_rad))
     coslambda = np.cos(alpha_rad) * np.cos(delta_rad) / np.cos(beta_rad)
-    sinlambda = (np.sin(delta_rad) * np.sin(obliq) + np.cos(delta_rad) * np.cos(obliq) * np.sin(alpha_rad)) / np.cos(beta_rad)
+    sinlambda = (np.sin(delta_rad) * np.sin(obliq) +
+                 np.cos(delta_rad) * np.cos(obliq) * np.sin(alpha_rad)) / np.cos(beta_rad)
     lambda_rad = np.arctan2(sinlambda, coslambda)  # make sure we get the right quadrant
     lambda_rad = _wrap_to_2pi(lambda_rad)
     return lambda_rad, beta_rad
@@ -96,12 +113,13 @@ def lb2ad(lambda_rad, beta_rad):
     See Eq 4 in Leinert et al. 1998
     """
 
-    obliq = _tenv(23, 26, 21.45)     # J2000 obliquity of Earth in degrees
+    obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
     obliq *= np.pi / 180.
 
     delta = np.arcsin(np.sin(beta_rad) * np.cos(obliq) + np.cos(beta_rad) * np.sin(obliq) * np.sin(lambda_rad))
     cosalpha = np.cos(lambda_rad) * np.cos(beta_rad) / np.cos(delta)
-    sinalpha = (-np.sin(beta_rad) * np.sin(obliq) + np.cos(beta_rad) * np.cos(obliq) * np.sin(lambda_rad)) / np.cos(delta)
+    sinalpha = (-np.sin(beta_rad) * np.sin(obliq) +
+                np.cos(beta_rad) * np.cos(obliq) * np.sin(lambda_rad)) / np.cos(delta)
     alpha = np.arctan2(sinalpha, cosalpha)
     alpha = _wrap_to_2pi(alpha)
 
@@ -113,7 +131,11 @@ def _tenv(dd, mm, ss):
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
 
-def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separation_as3, aper, lambda_rad0, npoints=360, nrolls=14, maxvroll=7.0):
+def skyvec2ins(ra, dec,
+               pa1, pa2, pa3,
+               separation_as1, separation_as2, separation_as3,
+               aper, start_date,
+               npoints=360, nrolls=15, maxvroll=7.0):
     """
     Parameters
     ----------
@@ -127,16 +149,14 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         separations of companions in arcseconds
     aper : jwxml.Aperture object
         Aperture as loaded from the instrument SIAF
-    lambda_rad0 : float
-        ecliptic longitude of quadrature with the sun, in radians,
-        at the beginning of the year-long interval sampled by
-        this function (indirectly, this specifies the start date).
+    start_date : datetime.datetime
+        Start date of the year-long interval evaluated by skyvec2ins
     npoints : int
         number of points to sample in the year-long interval
         to find observable dates (default: 360)
     nrolls : int
         number of roll angles in the allowed roll angle range to
-        sample at each date (default: 14)
+        sample at each date (default: 15)
     maxvroll : float
         maximum number of degrees positive or negative roll around
         the boresight to allow (as designed: 7.0)
@@ -169,33 +189,16 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         of a reference "north" vector and "east" vector from the
         center in "Idl" (ideal) frame coordinates
     """
-
-    # Constants
-    deg2rad = np.pi / 180.
-    obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
+    # Per Chris Stark:
+    # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
+    # > So it should be 90 deg W of the solar longitude.
+    # West is negative, so subtract 90 from the angle (in deg) and convert to radians.
+    lambda_sun = sun_ecliptic_longitude(start_date)
+    lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
     # Conversions
-    ra_rad = ra * deg2rad
-    dec_rad = dec * deg2rad
-    obliq_rad = obliq * deg2rad
-    pa_north_rad = 0.  # companion marking North
-    pa_east_rad = 90. * deg2rad  # companion marking East
-    pa1_rad = pa1 * deg2rad  # companion 1
-    pa2_rad = pa2 * deg2rad  # companion 2
-    pa3_rad = pa3 * deg2rad  # companion 3
-
-    # Calculate the (V2,V3) coordinates of the coronagraph center
-    # That's where we want to stick the target
-    # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
-    # locations on the detector (according to Colin Cox)
-    cordetcoords = np.array([aper.XDetRef, aper.YDetRef])
-    corscicoords = aper.Det2Sci(cordetcoords[0], cordetcoords[1])
-    coridlcoords = aper.Sci2Idl(corscicoords[0], corscicoords[1])
-    cortelcoords = aper.Idl2Tel(coridlcoords[0], coridlcoords[1])
-    # convert arcseconds to radians
-    cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
-    # At this point, we have the coronagraph mask location in
-    # science, telescope, and celestial coordinates
+    ra_rad = np.deg2rad(ra)
+    dec_rad = np.deg2rad(dec)
 
     # We want to know the PA of the V3 axis. A simple way to do this
     # would be to form the 3 telescope axes as normal unit vectors in Cartesian
@@ -219,7 +222,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # (alpha, delta) -> (lambda, beta)
     lambda_rad, beta_rad = ad2lb(pointing_rad[0], pointing_rad[1])  # first, convert to ecliptic coords
 
-    quadrature_lambda_rad = np.arange(npoints) / npoints * 2 * np.pi + lambda_rad0  # the ecliptic latitude of the direction of quadrature vs. time in steps of 1 degree
+    # the ecliptic latitude of the direction of quadrature vs. time in steps of 1 degree
+    quadrature_lambda_rad = np.arange(npoints) / npoints * 2 * np.pi + lambda_rad0
     j = np.where(quadrature_lambda_rad < 0)
     if len(j[0]) > 0:
         quadrature_lambda_rad[j] += 2 * np.pi
@@ -233,15 +237,15 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     assert elongation_rad.shape == (npoints,)
     assert inc_rad.shape == (npoints,)
 
-
     # Calculate celestial coordinates of V2 & V3 axis
     # First, calculate solar elongation & inclination
 
-    v3_elongation_rad = elongation_rad + (np.pi/2)
+    v3_elongation_rad = elongation_rad + (np.pi / 2)
     v3_inc_rad = inc_rad.copy()  # explicit copy -- does mutating this affect things later??
     j = np.where(v3_elongation_rad > np.pi)  # Make sure the solar elongation is between 0 - 180 degrees
     if len(j[0]) > 0:
-        v3_elongation_rad[j] = (2 * np.pi) - v3_elongation_rad[j]  # make sure all our angles follow standard definitions
+        # make sure all our angles follow standard definitions
+        v3_elongation_rad[j] = (2 * np.pi) - v3_elongation_rad[j]
         v3_inc_rad[j] = np.pi + inc_rad[j]
         v3_inc_rad %= 2 * np.pi
 
@@ -267,32 +271,26 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         np.sin(delta_rad)
     ])
 
-    ux = unit_vec[0]
-    uy = unit_vec[1]
-    uz = unit_vec[2]
+    ux, uy, uz = unit_vec
+    # alias for clarity below:
+    v1_unit_vec = unit_vec
 
-    v1_unit_vec = np.zeros((3, npoints))
-    # a bunch of v1 unit vectors, all the same, for each elongation
-    v1_unit_vec[:, :] = unit_vec[:, np.newaxis]
-    assert v1_unit_vec.shape == (3, 360)
     # Here are the V3 unit vectors for each elongation
     v3_unit_vec = np.array([
         np.cos(v3_delta_rad) * np.cos(v3_alpha_rad),
         np.cos(v3_delta_rad) * np.sin(v3_alpha_rad),
         np.sin(v3_delta_rad)
     ])
-    assert v1_unit_vec.shape == (3, 360)
     # Take the cross product to get v2 (v2 = v3 x v1)
     v2_unit_vec = np.zeros((3, len(v3_delta_rad)))
     for i in range(len(v3_delta_rad)):
-        v2_unit_vec[:, i] = np.cross(v3_unit_vec[:, i], v1_unit_vec[:, i])
-    assert v1_unit_vec.shape == (3, 360)
+        v2_unit_vec[:, i] = np.cross(v3_unit_vec[:, i], v1_unit_vec)
 
     # Now make unit vector arrays including all vehicle roll angles
     # Make the rotation matrix about the v1 axis
-    vroll = (2 * np.arange(nrolls, dtype=np.float64) / (nrolls - 1) - 1) * maxvroll
-    cosvroll = np.cos(vroll * deg2rad)
-    sinvroll = np.sin(vroll * deg2rad)
+    vroll = np.linspace(-maxvroll, maxvroll, nrolls)
+    cosvroll = np.cos(np.deg2rad(vroll))
+    sinvroll = np.sin(np.deg2rad(vroll))
 
     # Find the v1 axis in cartesian space
     utensu = np.array([
@@ -301,34 +299,33 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
         [ux * uz, uy * uz, uz * uz]
     ])
     ucpm = np.array([
-        [  0, -uz,  uy],
-        [ uz,   0, -ux],
-        [-uy,  ux,   0]
+        [0, -uz, uy],
+        [uz, 0, -ux],
+        [-uy, ux, 0]
     ])
     ident = np.array([
         [1, 0, 0],
         [0, 1, 0],
         [0, 0, 1]
     ])
-    v1_uva = np.zeros((3, nrolls, npoints))
+
     v2_uva = np.zeros((3, nrolls, npoints))
     v3_uva = np.zeros((3, nrolls, npoints))
     for i in range(npoints):
         for j in range(nrolls):
             # a rotation matrix about the v1 axis...
-            rotation_matrix = cosvroll[j] * ident + sinvroll[j] * ucpm + (1-cosvroll[j]) * utensu
+            rotation_matrix = cosvroll[j] * ident + sinvroll[j] * ucpm + (1 - cosvroll[j]) * utensu
             # rotate those unit vectors
-            v1_uva[:, j, i] = np.dot(rotation_matrix, v1_unit_vec[:, i])
-            assert np.allclose(np.dot(rotation_matrix, v1_unit_vec[:, i]), v1_unit_vec[:, i])
+            # (dotting rotation_matrix . v1_unit_vec should reproduce
+            # v1_unit_vec, so don't bother)
             v2_uva[:, j, i] = np.dot(rotation_matrix, v2_unit_vec[:, i])
             v3_uva[:, j, i] = np.dot(rotation_matrix, v3_unit_vec[:, i])
-
 
     # Now that we have the unit vectors at all vehicle roll angles and elongations,
     # we use the dot product method of finding the PA
     # Let's add a tiny displacement in the north and east directions and
     # make unit vectors out of them...
-    ddelta_rad = 1. / (1000. * 60. * 60. * 180. / np.pi) # 1 milliarcsec in rad
+    ddelta_rad = 1. / (1000. * 60. * 60. * 180. / np.pi)  # 1 milliarcsec in rad
     dalpha_rad = 1. / (1000. * 60. * 60. * 180. / np.pi)
     # First, get vectors from the origin to the tiny displacements
     #  ... a vector in the E direction
@@ -352,8 +349,9 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # TODO refactor this to remove loops
     for i in range(npoints):
         for j in range(nrolls):
-            # j, j transposed from idl bc of indexing
-            north_vec_all_rolls[:, j, i] = north_vec  # just for making this the right shape to go with npoints and nrolls
+            # i, j transposed from IDL bc of indexing
+            # just for making this the right shape to go with npoints and nrolls
+            north_vec_all_rolls[:, j, i] = north_vec
     # Subtract off the unit vector pointing to the star to determine the direction of the E vector at the star
     east_vec = unit_vec3 - unit_vec
     east_vec /= np.sqrt(np.sum(east_vec * east_vec))  # make it a unit vector
@@ -378,14 +376,13 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # We're not quite done...we need to know the orientation...
     # Now translate the v2 vector into ecliptic coords to determine quadrant of PA
     # ~~~ this might have to do with when JWST has to flip to reach things?
-    v2_delta_rad = np.arcsin(v2_uva[:,:,2])
-    v2_sinalpha = v2_uva[:,:,1] / np.cos(v2_delta_rad)
-    v2_cosalpha = v2_uva[:,:,0] / np.cos(v2_delta_rad)
+    v2_delta_rad = np.arcsin(v2_uva[:, :, 2])
+    v2_sinalpha = v2_uva[:, :, 1] / np.cos(v2_delta_rad)
+    v2_cosalpha = v2_uva[:, :, 0] / np.cos(v2_delta_rad)
     v2_alpha_rad = np.arctan2(v2_sinalpha, v2_cosalpha)
     j = np.where(v2_alpha_rad < 0)
     if len(j[0]) > 0:
         v2_alpha_rad[j] += 2 * np.pi
-    v2_beta_rad = np.arcsin(np.sin(v2_delta_rad) * np.cos(obliq_rad) - np.cos(v2_delta_rad) * np.sin(obliq_rad) * np.sin(v2_alpha_rad))
 
     # Finally, we have the approximate PA of the V3 axis!
     # ---------------------
@@ -396,119 +393,12 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     # The target & PA reference points are specified relative to North.
     # So do this, we rotate the points by the the V3 PA, which is measured
     # relative to North. Then we shift them to the (V2,V3) location of the coronagraph center.
-    #
-    # BEGIN DETECTOR COORDS TRANSFORM SECTION
-
-    # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
-    # companions relative to stars. This can be added to [ra,dec] of
-    # stars to get absolute positions (approximately)
-
-    # tiny offset in north and east so they can be rotated identically to companions for plotting
-    dcoordsN_rad = (0.1 / 206264.806247) * np.array([np.sin(pa_north_rad), np.cos(pa_north_rad)])
-    dcoordsE_rad = (0.1 / 206264.806247) * np.array([np.sin(pa_east_rad), np.cos(pa_east_rad)])
-    # dcoords 1-3 are coords of companions
-    dcoords1_rad = (separation_as1 / 206264.806247) * np.array([np.sin(pa1_rad), np.cos(pa1_rad)])
-    dcoords2_rad = (separation_as2 / 206264.806247) * np.array([np.sin(pa2_rad), np.cos(pa2_rad)])
-    dcoords3_rad = (separation_as3 / 206264.806247) * np.array([np.sin(pa3_rad), np.cos(pa3_rad)])
-
-    # First, the rotation...
-    targceloffset_rad = np.array([0, 0])  # assume telescope is pointed at star
-    targteloffset_rad = np.zeros((nrolls, npoints, 2))
-    targteloffset_rad[:, :, 0] = np.cos(roll_rad) * targceloffset_rad[0] - np.sin(roll_rad) * targceloffset_rad[1]
-    targteloffset_rad[:, :, 1] = np.sin(roll_rad) * targceloffset_rad[0] + np.cos(roll_rad) * targceloffset_rad[1]
-    refceloffsetN_rad = dcoordsN_rad  # PA reference point
-    refceloffsetE_rad = dcoordsE_rad  # PA reference point
-    refceloffset1_rad = dcoords1_rad  # PA reference point
-    refceloffset2_rad = dcoords2_rad  # PA reference point
-    refceloffset3_rad = dcoords3_rad  # PA reference point
-    refteloffsetN_rad = np.zeros((nrolls, npoints, 2))
-    refteloffsetE_rad = np.zeros((nrolls, npoints, 2))
-    refteloffset1_rad = np.zeros((nrolls, npoints, 2))
-    refteloffset2_rad = np.zeros((nrolls, npoints, 2))
-    refteloffset3_rad = np.zeros((nrolls, npoints, 2))
-    refteloffsetN_rad[:, :, 0] = np.cos(roll_rad) * refceloffsetN_rad[0] - np.sin(roll_rad) * refceloffsetN_rad[1]
-    refteloffsetE_rad[:, :, 0] = np.cos(roll_rad) * refceloffsetE_rad[0] - np.sin(roll_rad) * refceloffsetE_rad[1]
-    refteloffset1_rad[:, :, 0] = np.cos(roll_rad) * refceloffset1_rad[0] - np.sin(roll_rad) * refceloffset1_rad[1]
-    refteloffset2_rad[:, :, 0] = np.cos(roll_rad) * refceloffset2_rad[0] - np.sin(roll_rad) * refceloffset2_rad[1]
-    refteloffset3_rad[:, :, 0] = np.cos(roll_rad) * refceloffset3_rad[0] - np.sin(roll_rad) * refceloffset3_rad[1]
-    refteloffsetN_rad[:, :, 1] = np.sin(roll_rad) * refceloffsetN_rad[0] + np.cos(roll_rad) * refceloffsetN_rad[1]
-    refteloffsetE_rad[:, :, 1] = np.sin(roll_rad) * refceloffsetE_rad[0] + np.cos(roll_rad) * refceloffsetE_rad[1]
-    refteloffset1_rad[:, :, 1] = np.sin(roll_rad) * refceloffset1_rad[0] + np.cos(roll_rad) * refceloffset1_rad[1]
-    refteloffset2_rad[:, :, 1] = np.sin(roll_rad) * refceloffset2_rad[0] + np.cos(roll_rad) * refceloffset2_rad[1]
-    refteloffset3_rad[:, :, 1] = np.sin(roll_rad) * refceloffset3_rad[0] + np.cos(roll_rad) * refceloffset3_rad[1]
-    # Now, the shift...
-    targtelcoords_rad = np.zeros((nrolls, npoints, 2))
-    targtelcoords_rad[:, :, 0] = targteloffset_rad[:, :, 0] + cortelcoords_rad[0]
-    targtelcoords_rad[:, :, 1] = targteloffset_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoordsN_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoordsE_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoords1_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoords2_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoords3_rad = np.zeros((nrolls, npoints, 2))
-    reftelcoordsN_rad[:, :, 0] = refteloffsetN_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoordsE_rad[:, :, 0] = refteloffsetE_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoords1_rad[:, :, 0] = refteloffset1_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoords2_rad[:, :, 0] = refteloffset2_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoords3_rad[:, :, 0] = refteloffset3_rad[:, :, 0] + cortelcoords_rad[0]
-    reftelcoordsN_rad[:, :, 1] = refteloffsetN_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoordsE_rad[:, :, 1] = refteloffsetE_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoords1_rad[:, :, 1] = refteloffset1_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoords2_rad[:, :, 1] = refteloffset2_rad[:, :, 1] + cortelcoords_rad[1]
-    reftelcoords3_rad[:, :, 1] = refteloffset3_rad[:, :, 1] + cortelcoords_rad[1]
-
-    # Transform from (v2,v3) telescope coordinates to science coordinates
-    targidlcoords = np.zeros((nrolls, npoints, 2))
-    for i in range(npoints):
-        for j in range(nrolls):
-            temptelcoords = np.array([targtelcoords_rad[j, i, 0], targtelcoords_rad[j, i, 1]]) * 206264.806247  # arcseconds
-            tempidlcoords = aper.Tel2Idl(temptelcoords[0], temptelcoords[1])
-            targidlcoords[j, i] = np.asarray(tempidlcoords)
-
-    refidlcoordsN = np.zeros((nrolls, npoints, 2))
-    refidlcoordsE = np.zeros((nrolls, npoints, 2))
-    refidlcoords1 = np.zeros((nrolls, npoints, 2))
-    refidlcoords2 = np.zeros((nrolls, npoints, 2))
-    refidlcoords3 = np.zeros((nrolls, npoints, 2))
-
-    for i in range(npoints):
-        for j in range(nrolls):
-            temptelcoordsN = np.array([reftelcoordsN_rad[j, i, 0], reftelcoordsN_rad[j, i, 1]]) * 206264.806247  # arcseconds
-            temptelcoordsE = np.array([reftelcoordsE_rad[j, i, 0], reftelcoordsE_rad[j, i, 1]]) * 206264.806247  # arcseconds
-            temptelcoords1 = np.array([reftelcoords1_rad[j,i,0], reftelcoords1_rad[j,i,1]]) * 206264.806247  # arcseconds
-            temptelcoords2 = np.array([reftelcoords2_rad[j,i,0], reftelcoords2_rad[j,i,1]]) * 206264.806247  # arcseconds
-            temptelcoords3 = np.array([reftelcoords3_rad[j,i,0], reftelcoords3_rad[j,i,1]]) * 206264.806247  # arcseconds
-
-            tempidlcoordsN = aper.Tel2Idl(temptelcoordsN[0], temptelcoordsN[1])
-            tempidlcoordsE = aper.Tel2Idl(temptelcoordsE[0], temptelcoordsE[1])
-            tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
-            tempidlcoords2 = aper.Tel2Idl(temptelcoords2[0], temptelcoords2[1])
-            tempidlcoords3 = aper.Tel2Idl(temptelcoords3[0], temptelcoords3[1])
-
-            refidlcoordsN[j, i] = tempidlcoordsN
-            refidlcoordsE[j, i] = tempidlcoordsE
-            refidlcoords1[j, i] = tempidlcoords1
-            refidlcoords2[j, i] = tempidlcoords2
-            refidlcoords3[j, i] = tempidlcoords3
-
-    # Detector coordinates of star and companion
-    c1_x = refidlcoords1[:, :, 0]
-    c1_y = refidlcoords1[:, :, 1]
-    c2_x = refidlcoords2[:, :, 0]
-    c2_y = refidlcoords2[:, :, 1]
-    c3_x = refidlcoords3[:, :, 0]
-    c3_y = refidlcoords3[:, :, 1]
-    n_x = refidlcoordsN[:, :, 0]
-    n_y = refidlcoordsN[:, :, 1]
-    e_x = refidlcoordsE[:, :, 0]
-    e_y = refidlcoordsE[:, :, 1]
-
-    # END OF DETECTOR POS SECTION
 
     # Determine when the target is observable
     # we're going to explore other roll angles now, so
     # these are going to be 2D arrays (roll angle, elongation)
     vroll_rad = np.zeros((nrolls, npoints))
-    vroll_rad[:, :] = vroll[:, np.newaxis] * deg2rad
+    vroll_rad[:, :] = np.deg2rad(vroll)[:, np.newaxis]
     # vroll_rad is an array: nrolls x npoints
     elongation_rad_arr = np.zeros((nrolls, npoints))
     elongation_rad_arr[:, :] = elongation_rad[np.newaxis, :]
@@ -520,8 +410,8 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
     assert sroll_rad.shape == (nrolls, npoints)
     spitch_rad = np.arctan(np.tan(vpitch_rad) / np.cos(vroll_rad))
     assert spitch_rad.shape == (nrolls, npoints)
-    sroll = sroll_rad / deg2rad
-    spitch = spitch_rad / deg2rad
+    sroll = np.rad2deg(sroll_rad)
+    spitch = np.rad2deg(spitch_rad)
 
     observable = np.zeros((nrolls, npoints), dtype=bool)
 
@@ -543,6 +433,69 @@ def skyvec2ins(ra, dec, pa1, pa2, pa3, separation_as1, separation_as2, separatio
 
     x = np.arange(npoints) * (365.25 / npoints)  # days since launch
 
-    return (x, observable.astype(np.uint8), elongation_rad, roll_rad,
-            c1_x, c1_y,
-            c2_x, c2_y, c3_x, c3_y, n_x, n_y, e_x, e_y)
+    pa_sep_pairs = [
+        (pa1, separation_as1),
+        (pa2, separation_as2),
+        (pa3, separation_as3),
+        (0., 0.1),  # 0.1 arcsec at North for North vector overlay
+        (90., 0.1),  # 0.1 arcsec at East for East vector overlay
+    ]
+    results = []
+    for pa, sep in pa_sep_pairs:
+        idl_x, idl_y = detector_transform(
+            nrolls, npoints, roll_rad,
+            pa,
+            sep,
+            aper
+        )
+        results.extend((idl_x, idl_y))
+    return [x, observable.astype(np.uint8), elongation_rad, roll_rad] + results
+
+
+def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
+    pa_rad = np.deg2rad(pa)  # companion 1
+    # Calculate the (V2,V3) coordinates of the coronagraph center
+    # That's where we want to stick the target
+    # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
+    # locations on the detector (according to Colin Cox)
+    cortelcoords = aper.Det2Tel(aper.XDetRef, aper.YDetRef)
+    # convert arcseconds to radians
+    cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
+    # At this point, we have the coronagraph mask location in
+    # science, telescope, and celestial coordinates
+
+    # BEGIN DETECTOR COORDS TRANSFORM SECTION
+
+    # Calculate approximate celestial ([alpha, delta], i.e. [ra, dec]) coordinates of
+    # companions relative to stars. This can be added to [ra,dec] of
+    # stars to get absolute positions (approximately)
+    dcoords1_rad = (separation_as / 206264.806247) * np.array([np.sin(pa_rad), np.cos(pa_rad)])
+
+    # First, the rotation...
+    refceloffset1_rad = dcoords1_rad  # PA reference point
+    refteloffset1_rad = np.zeros((nrolls, npoints, 2))
+    refteloffset1_rad[:, :, 0] = np.cos(roll_rad) * refceloffset1_rad[0] - np.sin(roll_rad) * refceloffset1_rad[1]
+    refteloffset1_rad[:, :, 1] = np.sin(roll_rad) * refceloffset1_rad[0] + np.cos(roll_rad) * refceloffset1_rad[1]
+
+    reftelcoords1_rad = np.zeros((nrolls, npoints, 2))
+    reftelcoords1_rad[:, :, 0] = refteloffset1_rad[:, :, 0] + cortelcoords_rad[0]
+    reftelcoords1_rad[:, :, 1] = refteloffset1_rad[:, :, 1] + cortelcoords_rad[1]
+
+    # Transform from (v2,v3) telescope coordinates to science coordinates
+    refidlcoords1 = np.zeros((nrolls, npoints, 2))
+
+    for i in range(npoints):
+        for j in range(nrolls):
+            temptelcoords1 = np.array([
+                reftelcoords1_rad[j, i, 0],
+                reftelcoords1_rad[j, i, 1]
+            ]) * 206264.806247  # arcseconds
+            tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
+            refidlcoords1[j, i] = tempidlcoords1
+
+    # Detector coordinates of star and companion
+    c1_x = refidlcoords1[:, :, 0]
+    c1_y = refidlcoords1[:, :, 1]
+
+    # END OF DETECTOR POS SECTION
+    return c1_x, c1_y
