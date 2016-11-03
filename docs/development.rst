@@ -43,5 +43,5 @@ To build a maximally backwards compatible bundle using the ``banana`` build mach
    pip install --user .
    make app
    cd dist
-   zip -r jwst_visibility_calculator_osx.zip ./JWST\ Visibility\ Calculator.app/
-   mv jwst_visibility_calculator_osx.zip /user/$USER/
+   zip -r jwst_visibility_calculator_macos.zip ./JWST\ Visibility\ Calculator.app/
+   mv jwst_visibility_calculator_macos.zip /user/$USER/

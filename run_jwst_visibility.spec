@@ -1,5 +1,6 @@
 # -*- mode: python -*-
 import sys
+from PyInstaller.utils import hooks
 
 block_cipher = None
 
@@ -11,6 +12,7 @@ else:
 a = Analysis(['run_jwst_visibility.py'],
              pathex=['.'],
              binaries=None,
+             datas=hooks.collect_data_files('jwxml'),
              hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
