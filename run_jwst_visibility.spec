@@ -3,11 +3,10 @@ import sys
 
 block_cipher = None
 
-hiddenimports = ['tkinter',]
 if sys.version_info[0] == 2:
-    hiddenimports.append('FileDialog')
+    hiddenimports = ['Tkinter', 'FileDialog']
 else:
-    hiddenimports.append('tkinter.filedialog')
+    hiddenimports = ['tkinter', 'tkinter.filedialog']
 
 a = Analysis(['run_jwst_visibility.py'],
              pathex=['.'],
