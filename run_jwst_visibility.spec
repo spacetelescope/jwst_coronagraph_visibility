@@ -1,21 +1,28 @@
 # -*- mode: python -*-
+import sys
 
 block_cipher = None
 
+hiddenimports = ['tkinter',]
+if sys.version_info[0] == 2:
+    hiddenimports.append('FileDialog')
+else:
+    hiddenimports.append('tkinter.filedialog')
 
 a = Analysis(['run_jwst_visibility.py'],
-             pathex=['/Users/jlong/software/jwst_visibility'],
+             pathex=['.'],
              binaries=None,
-             datas=[('jwst_visibility/data/*.xml', 'data'),],
-             hiddenimports=['tkinter', 'tkinter.filedialog'],
+             hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -24,6 +31,7 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False )
+
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -31,7 +39,10 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                name='run_jwst_visibility')
+
 app = BUNDLE(coll,
              name='JWST Visibility Calculator.app',
              icon='./jwst.icns',
-             bundle_identifier='edu.stsci.jwst_visibility')
+             bundle_identifier='edu.stsci.jwst_visibility',
+             info_plist={'NSHighResolutionCapable': 'True'},
+             )

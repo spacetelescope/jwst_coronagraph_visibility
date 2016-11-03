@@ -32,6 +32,9 @@ To build a maximally backwards compatible bundle using the ``banana`` build mach
    export PATH="/tmp/$USER/Library/Python/2.7/bin:$PATH"
    export PYTHONPATH="/tmp/$USER/Library/Python/2.7/lib/python/site-packages:$PYTHONPATH"
    cd
+   curl -O https://bootstrap.pypa.io/get-pip.py
+   python get-pip.py --user
+   pip install --user -U pyinstaller
    pip install --user -U numpy
    pip install --user -U matplotlib
    git clone https://github.com/spacetelescope/jwst_visibility.git
