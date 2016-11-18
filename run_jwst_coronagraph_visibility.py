@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from jwst_visibility.gui import run
+from jwst_coronagraph_visibility.gui import run
 
 if __name__ == "__main__":
     run()

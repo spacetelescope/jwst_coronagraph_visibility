@@ -37,11 +37,11 @@ To build a maximally backwards compatible bundle using the ``banana`` build mach
    pip install --user -U pyinstaller
    pip install --user -U numpy
    pip install --user -U matplotlib
-   git clone https://github.com/spacetelescope/jwst_visibility.git
-   cd jwst_visibility
+   git clone https://github.com/spacetelescope/jwst_coronagraph_visibility.git
+   cd jwst_coronagraph_visibility
    git pull
    pip install --user .
    make app
    cd dist
-   zip -r jwst_visibility_calculator_macos.zip ./JWST\ Visibility\ Calculator.app/
-   mv jwst_visibility_calculator_macos.zip /user/$USER/
+   zip -r jwst_coronagraph_visibility_calculator_macos.zip ./JWST\ Visibility\ Calculator.app/
+   mv jwst_coronagraph_visibility_calculator_macos.zip /user/$USER/

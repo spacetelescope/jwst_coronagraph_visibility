@@ -1,6 +1,6 @@
-***************************
-JWST Target Visibility Tool
-***************************
+********************************
+JWST Coronagraph Visibility Tool
+********************************
 
 *Authors:* Christopher Stark <cstark@stsci.edu>, Joseph Long <jlong@stsci.edu>
 
@@ -13,27 +13,27 @@ The allowed pointing of JWST leads to target visibility that depends on ecliptic
   2. determine the ideal roll angle offsets for multi-roll observations, and
   3. determine a group of targets that are simultaneously visible.
 
-The JWST Target Visibility Tool (Coronagraph Visibility Calculator) was created to address these issues and assist with creating APT programs and diagnosing scheduling errors.
+The JWST Coronagraph Visibility Tool (Coronagraph Visibility Calculator) was created to address these issues and assist with creating APT programs and diagnosing scheduling errors.
 
-We stress that the Target Visibility Tool is designed to provide quick illustrations of the possible observable orientations for a given target. As such, the Target Visibility Tool rapidly approximates JWST’s pointing restrictions and does not query the official JWST Proposal Constraint Generator (PCG). The Target Visibility Tool does not include detailed pointing restrictions like Earth and Moon avoidance, etc. Additionally, results may differ from official constraints by a degree or so. Users should treat the results as close approximations.
+We stress that the Coronagraph Visibility Tool is designed to provide quick illustrations of the possible observable orientations for a given target. As such, the Coronagraph Visibility Tool rapidly approximates JWST’s pointing restrictions and does not query the official JWST Proposal Constraint Generator (PCG). The Coronagraph Visibility Tool does not include detailed pointing restrictions like Earth and Moon avoidance, etc. Additionally, results may differ from official constraints by a degree or so. Users should treat the results as close approximations.
 
-Downloading & installing the Target Visibility Tool
-===================================================
+Downloading & installing the Coronagraph Visibility Tool
+========================================================
 
-The latest release of the Target Visibility Tool can be downloaded from https://github.com/spacetelescope/jwst_visibility/releases. Both source Python and macOS app bundles are available.
+The latest release of the Coronagraph Visibility Tool can be downloaded from https://github.com/spacetelescope/jwst_coronagraph_visibility/releases. Both source Python and macOS app bundles are available.
 
-**To run the macOS app bundle,** download the appropriate zip file and decompress it, then double-click to run the JWST Target Visibility Tool.
+**To run the macOS app bundle,** download the appropriate zip file and decompress it, then double-click to run the JWST Coronagraph Visibility Tool.
 
-If you prefer to install from source, or are not using macOS, we recommend installing Python with the conda package manager and using the `AstroConda <http://astroconda.readthedocs.io/en/latest/index.html>`_ package set supported by STScI. After following the `AstroConda installation instructions <http://astroconda.readthedocs.io/en/latest/installation.html>`_, the following command will install the JWST Target Visibility Tool:
+If you prefer to install from source, or are not using macOS, we recommend installing Python with the conda package manager and using the `AstroConda <http://astroconda.readthedocs.io/en/latest/index.html>`_ package set supported by STScI. After following the `AstroConda installation instructions <http://astroconda.readthedocs.io/en/latest/installation.html>`_, the following command will install the JWST Coronagraph Visibility Tool:
 
-   pip install "git+https://github.com/spacetelescope/jwst_visibility.git#egg=jwst-visibility"
+   pip install "git+https://github.com/spacetelescope/jwst_coronagraph_visibility.git#egg=jwst-visibility"
 
 If you would rather not use AstroConda, read on.
 
-What are the prerequisites for installing the JWST Target Visibility Tool?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+What are the prerequisites for installing the JWST Coronagraph Visibility Tool?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The JWST Target Visibility Tool depends on:
+The JWST Coronagraph Visibility Tool depends on:
 
  * Python 2.7, 3.4, or 3.5
  * NumPy version 1.9.0 (or greater)
@@ -42,24 +42,24 @@ The JWST Target Visibility Tool depends on:
 
 Running the automated test suite additionally depends on pytest version 2.9.1 (or greater). Building the documentation requires Sphinx version 1.4.5 (or greater).
 
-Can I install the JWST Target Visibility Tool without using conda at all?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Can I install the JWST Coronagraph Visibility Tool without using conda at all?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The pip command should be sufficient to install the tool and its prerequisites in most cases. If you experience difficulties, try installing NumPy alone first, then using the given installation command.
 
-Can I install the JWST Target Visibility Tool without all of AstroConda?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Can I install the JWST Coronagraph Visibility Tool without all of AstroConda?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yes! If you're already using conda, but do not want to install everything else included in AstroConda, simply install the prerequisite packages with ``conda install`` before running the ``pip`` command listed above.
 
-Using the Target Visibility Tool
-================================
+Using the Coronagraph Visibility Tool
+=====================================
 
 You will now have an app icon, or if installing from source the command ``jwst-visibility-gui`` will be available. Run the app or command and the GUI should appear, as shown in Figure 1. (Initial startup may take a few seconds.)
 
 .. figure:: figures/startup.png
 
-   *Figure 1: The Target Visibility Tool GUI at startup. The control panel is on the left and the plot panels are on the right.*
+   *Figure 1: The Coronagraph Visibility Tool GUI at startup. The control panel is on the left and the plot panels are on the right.*
 
 In the GUI you will see a control panel on the left and a plot panel on the right. Within the control panel there is a SIMBAD Target Resolver frame, input boxes for RA and declination coordinates, a Companions frame, an Instrument/Mask Selector frame, and an Update Plot button. Below the Update Plot button are three example calculations included for testing or a quick demonstration of capabilities.
 
@@ -98,19 +98,19 @@ To select a companion position, click on a red, blue, or purple point in the sci
 
 .. |zoom icon| image:: figures/zoom_icon.png
 
-Example Application of the Target Visibility Tool
-=================================================
+Example Application of the Coronagraph Visibility Tool
+======================================================
 
 Suppose we want to observe the outer 3 planets in the HR 8799 system with the NIRCam SWB. We don’t want the planets to fall behind the mask. By clicking on the detector plot, we can quickly determine that all three planets can be simultaneously observed at an Aperture PA of ~211°.
 
 Final Notes
 ===========
 
-As stressed in the introduction, the Target Visibility Tool tool does not generate official pointing restrictions; users should consider the results approximate and plan accordingly when using this tool to create APT programs. For example, one should not rely on this tool to ensure that the orientation on the detector is accurate to within a degree, or that the placement of a companion is on a given pixel.
+As stressed in the introduction, the Coronagraph Visibility Tool tool does not generate official pointing restrictions; users should consider the results approximate and plan accordingly when using this tool to create APT programs. For example, one should not rely on this tool to ensure that the orientation on the detector is accurate to within a degree, or that the placement of a companion is on a given pixel.
 
 Additional information on JWST’s pointing restrictions, and how those affect target visibility are included in the following appendix.
 
-Please contact Chris Stark (cstark@stsci.edu) with any questions or comments on the Target Visibility Tool.
+Please contact Chris Stark (cstark@stsci.edu) with any questions or comments on the Coronagraph Visibility Tool.
 
 Appendix: JWST’s pointing restrictions and the impact on schedulability
 =======================================================================
@@ -146,7 +146,7 @@ The curved observation blocks shown in the middle panel of Figure 7 lead to impo
 Appendix: Python API and Testing
 ================================
 
-Documentation on the (unsupported) Python API exposed by this module can be found in the docstrings for :func:`jwst_visibility.skyvec2ins.skyvec2ins`. There is also a bit of documentation on the development setup for this tool and its documentation in the ``docs/development.rst`` file.
+Documentation on the (unsupported) Python API exposed by this module can be found in the docstrings for :func:`jwst_coronagraph_visibility.skyvec2ins.skyvec2ins`. There is also a bit of documentation on the development setup for this tool and its documentation in the ``docs/development.rst`` file.
 
 .. toctree::
    :maxdepth: 2
