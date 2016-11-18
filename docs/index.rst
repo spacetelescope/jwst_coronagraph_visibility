@@ -55,7 +55,7 @@ Yes! If you're already using conda, but do not want to install everything else i
 Using the Coronagraph Visibility Tool
 =====================================
 
-You will now have an app icon, or if installing from source the command ``jwst-visibility-gui`` will be available. Run the app or command and the GUI should appear, as shown in Figure 1. (Initial startup may take a few seconds.)
+You will now have an app icon, or if installing from source the command ``jwst-coronagraph-visibility-gui`` will be available. Run the app or command and the GUI should appear, as shown in Figure 1. (Initial startup may take a few seconds.)
 
 .. figure:: figures/startup.png
 
