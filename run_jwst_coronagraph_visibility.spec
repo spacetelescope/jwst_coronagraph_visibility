@@ -9,7 +9,7 @@ if sys.version_info[0] == 2:
 else:
     hiddenimports = ['tkinter', 'tkinter.filedialog']
 
-a = Analysis(['run_jwst_visibility.py'],
+a = Analysis(['run_jwst_coronagraph_visibility.py'],
              pathex=['.'],
              binaries=None,
              datas=hooks.collect_data_files('jwxml'),
@@ -27,7 +27,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='run_jwst_visibility',
+          name='run_jwst_coronagraph_visibility',
           debug=False,
           strip=False,
           upx=True,
@@ -39,11 +39,11 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=True,
-               name='run_jwst_visibility')
+               name='run_jwst_coronagraph_visibility')
 
 app = BUNDLE(coll,
-             name='JWST Visibility Calculator.app',
+             name='JWST Coronagraph Visibility Tool.app',
              icon='./jwst.icns',
-             bundle_identifier='edu.stsci.jwst_visibility',
+             bundle_identifier='edu.stsci.jwst_coronagraph_visibility',
              info_plist={'NSHighResolutionCapable': 'True'},
              )

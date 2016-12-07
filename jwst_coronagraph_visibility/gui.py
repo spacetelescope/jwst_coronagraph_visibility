@@ -201,7 +201,7 @@ class VisibilityCalculator(object):
 
     def __init__(self):
         self.root = Tk()
-        self.root.title("JWST Visibility Calculator")
+        self.root.title("JWST Coronagraph Visibility Tool")
 
         def close_app():
             self.root.quit()

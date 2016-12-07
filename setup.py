@@ -23,11 +23,11 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.2',
 
-    description='JWST target observability calculator',
+    description='JWST coronagraphic target observability calculator',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/spacetelescope/jwst_visibility',
+    url='https://github.com/spacetelescope/jwst_coronagraph_visibility',
 
     # Author details
     author='Space Telescope Science Institute',
@@ -60,7 +60,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['jwst_visibility'],
+    packages=['jwst_coronagraph_visibility'],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -89,7 +89,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'jwst_visibility': [
+        'jwst_coronagraph_visibility': [
             'tests/targets/*/*.txt',
             'tests/targets/*/*.csv'
         ],
@@ -100,7 +100,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'gui_scripts': [
-            'jwst-visibility-gui=jwst_visibility.gui:run',
+            'jwst-coronagraph-visibility-gui=jwst_coronagraph_visibility.gui:run',
         ],
     },
 )
