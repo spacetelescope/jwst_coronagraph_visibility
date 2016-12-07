@@ -1,3 +1,3 @@
-recursive-include jwst_visibility *.csv
-recursive-include jwst_visibility *.py
-recursive-include jwst_visibility *.txt
+recursive-include jwst_coronagraph_visibility *.csv
+recursive-include jwst_coronagraph_visibility *.py
+recursive-include jwst_coronagraph_visibility *.txt

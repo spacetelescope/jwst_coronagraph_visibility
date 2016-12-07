@@ -26,7 +26,7 @@ The latest release of the Coronagraph Visibility Tool can be downloaded from htt
 
 If you prefer to install from source, or are not using macOS, we recommend installing Python with the conda package manager and using the `AstroConda <http://astroconda.readthedocs.io/en/latest/index.html>`_ package set supported by STScI. After following the `AstroConda installation instructions <http://astroconda.readthedocs.io/en/latest/installation.html>`_, the following command will install the JWST Coronagraph Visibility Tool:
 
-   pip install "git+https://github.com/spacetelescope/jwst_coronagraph_visibility.git#egg=jwst-visibility"
+   pip install "git+https://github.com/spacetelescope/jwst_coronagraph_visibility.git#egg=jwst-coronagraph-visibility"
 
 If you would rather not use AstroConda, read on.
 

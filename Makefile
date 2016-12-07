@@ -1,5 +1,5 @@
 app: clean
-	pyinstaller run_jwst_visibility.spec
+	pyinstaller run_jwst_coronagraph_visibility.spec
 
 clean:
 	find . -iname "*.pyc" -or -name "__pycache__" -delete
