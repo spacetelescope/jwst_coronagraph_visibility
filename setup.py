@@ -70,7 +70,7 @@ setup(
         'numpy>=1.9.0',
         'matplotlib>=1.4.2',
         'requests>=2.8.1',
-        'jwxml>=0.1.0',
+        'jwxml>=0.2.0',
     ],
 
     # List additional groups of dependencies here (e.g. development
