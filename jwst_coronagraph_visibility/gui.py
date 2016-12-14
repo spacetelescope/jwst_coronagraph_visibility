@@ -186,10 +186,10 @@ class VisibilityCalculator(object):
         'NRCB5_MASKLWB',
     ]
     MIRI_APERNAMES = [
-        'MIRIM_MASK1065',
-        'MIRIM_MASK1140',
-        'MIRIM_MASK1550',
-        'MIRIM_MASKLYOT'
+        'MIRIM_CORON1065',
+        'MIRIM_CORON1140',
+        'MIRIM_CORON1550',
+        'MIRIM_CORONLYOT'
     ]
     INSTRUMENT_TO_APERNAMES = {
         NIRCAM_A: NIRCAM_A_APERNAMES,
