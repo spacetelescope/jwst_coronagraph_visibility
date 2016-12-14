@@ -1,6 +1,10 @@
 JWST Coronagraph Visibility Tool
 ================================
 
+Current version: 0.0.2 (beta).
+
+`Download for Mac (24 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/v0.0.2/jwst_visibility_calculator_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/v0.0.2.zip>`_
+
 **This initial release is for user testing and (as with any software) bugs may remain! Report any issues at https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/new or via email to the authors**
 
 *Authors: Christopher Stark (cstark@stsci.edu), Joseph Long (jlong@stsci.edu)*
@@ -17,3 +21,13 @@ We stress that the CVT is designed to provide quick illustrations of the possibl
 Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (April 2016), the code includes its own copies of the PRDDEVSOC-D-012 version of the NIRCam and MIRI SIAFs.
 
 For installation instructions and usage instructions, see the `documentation <https://github.com/spacetelescope/jwst_coronagraph_visibility/blob/master/docs/index.rst>`_ on GitHub or ``docs/index.rst`` in this repository.
+
+Known Issues
+------------
+
+  * The CVT does not (and will not) query the JWST Proposal Constraint Generator. The only constraint on the field of regard is the Sun and anti-Sun avoidance angle.
+  * Target name resolution depends on the availability of the SIMBAD service. If the service cannot be reached, you will have to enter coordinates yourself.
+  * The CVT does not currently provide a way to export the plotted points as text. Plots can be saved from the GUI using the save icon below the plot panel.
+  * The CVT has only been tested on Mac and Linux. Issue reports from Windows users are welcome, and we will do our best to address them, but we are not testing the tool on Windows.
+
+*None as of this writing. See issue tracker at* https://github.com/spacetelescope/jwst_coronagraph_visibility/issues.
