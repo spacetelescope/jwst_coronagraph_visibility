@@ -30,4 +30,4 @@ Known Issues
   * The CVT does not currently provide a way to export the plotted points as text. Plots can be saved from the GUI using the save icon below the plot panel.
   * The CVT has only been tested on Mac and Linux. Issue reports from Windows users are welcome, and we will do our best to address them, but we are not testing the tool on Windows.
 
-*None as of this writing. See issue tracker at* https://github.com/spacetelescope/jwst_coronagraph_visibility/issues.
+*See issue tracker at* https://github.com/spacetelescope/jwst_coronagraph_visibility/issues.
