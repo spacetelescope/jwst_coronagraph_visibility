@@ -45,6 +45,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from jwxml import SIAF
+import jwxml
 from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
 
 from pprint import pprint
@@ -61,6 +62,117 @@ QUERY_TIMEOUT_SEC = 1.0
 
 DEFAULT_NPOINTS = 360
 DEFAULT_NROLLS = 20
+
+# Outlining the 'bad' areas of the NIRCam Module A coronagraphs requires some
+# coordinate conversion gymnastics as there is an optical wedge in the pupil
+# wheel that changes the angular to pixel transformation
+
+def compute_v2v3_offset(aperture_a, aperture_b):
+    '''
+    For the same pixel coordinates, different V2, V3 coordinates are used
+    depending on whether the coronagraph pupil wheel wedge is in the beam.
+    The offset is computed by transforming the same pixel (Det) coordinates
+    to V2, V3 in two different apertures and computing the difference in
+    the resulting Tel frame coordinates
+    '''
+    x_a, y_a = aperture_a.Det2Tel(aperture_b.XDetRef,  aperture_b.YDetRef)
+    x_b, y_b = aperture_b.Det2Tel(aperture_b.XDetRef,  aperture_b.YDetRef)
+    return x_a - x_b, y_a - y_b
+
+_NIRCAM_SIAF = SIAF('NIRCam')
+_NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
+    _NIRCAM_SIAF['NRCA5_MASKLWB'],
+    _NIRCAM_SIAF['NRCA5_FULL']
+)
+
+# These bad areas were defined in raw detector pixel coordinates by
+# John Stansberry using a backlit image of NIRCam A5 through the
+# long-wavelength bar coronagraph pupil wedge. Colin Cox translated them to
+# V2, V3 for A5
+
+NIRCAM_CORON_BAD_AREAS = np.array(
+       [[[  56.525 , -462.2092],
+        [  56.5505, -456.9293],
+        [  61.8066, -456.9541],
+        [  61.7856, -462.2317]],
+
+       [[  38.8981, -462.1289],
+        [  38.9384, -456.8408],
+        [  44.2083, -456.8827],
+        [  44.1725, -462.1682]],
+
+       [[  96.9128, -462.0046],
+        [  96.9041, -456.7388],
+        [ 102.1434, -456.7248],
+        [ 102.1565, -461.9892]],
+
+       [[ 117.1985, -461.9805],
+        [ 117.1727, -456.7191],
+        [ 122.4112, -456.6854],
+        [ 122.4413, -461.9459]],
+
+       [[  76.8615, -462.1433],
+        [  76.8697, -456.8714],
+        [  82.1149, -456.8766],
+        [  82.1112, -462.1468]],
+
+       [[ 134.8664, -462.0006],
+        [ 134.8259, -456.7415],
+        [ 140.0682, -456.6904],
+        [ 140.113 , -461.949 ]],
+
+       [[  38.9735, -444.1376],
+        [  38.9862, -442.5039],
+        [  41.2405, -442.5257],
+        [  41.2284, -444.159 ]],
+
+       [[  58.114 , -444.162 ],
+        [  58.1216, -442.6566],
+        [  60.3693, -442.6698],
+        [  60.3623, -444.1749]],
+
+       [[  78.2656, -444.1798],
+        [  78.2685, -442.7392],
+        [  80.5116, -442.7435],
+        [  80.5091, -444.1839]],
+
+       [[  98.3837, -443.9939],
+        [  98.3826, -442.7426],
+        [ 100.6232, -442.7381],
+        [ 100.6248, -443.9892]],
+
+       [[ 118.4879, -443.9169],
+        [ 118.483 , -442.6667],
+        [ 120.7234, -442.6532],
+        [ 120.7286, -443.9034]],
+
+       [[ 137.5412, -444.0201],
+        [ 137.5313, -442.5203],
+        [ 139.7735, -442.4982],
+        [ 139.7839, -443.9979]],
+
+       [[  21.83  , -463.4815],
+        [  22.1856, -428.4652],
+        [  38.844 , -428.6853],
+        [  38.5725, -463.6381]],
+
+       [[ 140.7495, -463.2577],
+        [ 140.4967, -428.7508],
+        [ 149.7032, -428.6478],
+        [ 150.0012, -463.153 ]],
+
+       [[  38.8609, -442.5026],
+        [  38.9691, -428.6867],
+        [ 140.4967, -428.7508],
+        [ 140.5833, -442.49  ]],
+
+       [[  38.1157, -465.8399],
+        [  38.136 , -463.1937],
+        [ 141.1852, -463.0652],
+        [ 141.2094, -465.6963]]])
+NIRCAM_CORON_BAD_AREAS[:,:,0] += _NIRCAM_CORON_OFFSET_TEL[0]
+NIRCAM_CORON_BAD_AREAS[:,:,1] += _NIRCAM_CORON_OFFSET_TEL[1]
+NIRCAM_CORON_BAD_AREAS.flags.writeable = False
 
 def query_simbad(query_string):
     response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
@@ -667,7 +779,6 @@ class VisibilityCalculator(object):
         self._canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
         def on_key_event(event):
-            # print('you pressed %s' % event.key)
             key_press_handler(event, self._canvas, self._toolbar)
 
         self._canvas.mpl_connect('key_press_event', on_key_event)
@@ -995,38 +1106,49 @@ class VisibilityCalculator(object):
         arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
 
-        if 'NRC' in aperture_name and aperture_name[-1] == 'R':
-            if '210R' in aperture_name:
-                radius_arcsec = 0.40
-            elif '335R' in aperture_name:
-                radius_arcsec = 0.64
-            elif '430R' in aperture_name:
-                radius_arcsec = 0.82
+        if 'NRC' in aperture_name:
+            mask_patches = []
+            for quad_verts in NIRCAM_CORON_BAD_AREAS:
+                v2, v3 = quad_verts[:,0], quad_verts[:,1]
+                xidl, yidl = aperture.Tel2Idl(v2, v3)
+                idl_verts = np.concatenate([xidl[:,np.newaxis], yidl[:,np.newaxis]], axis=1)
+                patch = patches.Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
+                mask_patches.append(patch)
+            if aperture_name[-1] == 'R':
+                if '210R' in aperture_name:
+                    radius_arcsec = 0.40
+                elif '335R' in aperture_name:
+                    radius_arcsec = 0.64
+                elif '430R' in aperture_name:
+                    radius_arcsec = 0.82
+                else:
+                    raise RuntimeError("Invalid mask!")
+                # make a circle
+                mask_patches.append(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
             else:
-                raise RuntimeError("Invalid mask!")
-            # make a circle
-            self._mask_artist = self.detector_ax.add_artist(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
-        elif 'NRC' in aperture_name:
-            if 'LWB' in aperture_name:
-                thin_extent_arcsec = 0.58 * (2 / 4)
-                thick_extent_arcsec = 0.58 * (6 / 4)
-            elif 'SWB' in aperture_name:
-                thin_extent_arcsec = 0.27 * (2 / 4)
-                thick_extent_arcsec = 0.27 * (6 / 4)
-            else:
-                raise RuntimeError("Invalid mask!")
+                if 'LWB' in aperture_name:
+                    thin_extent_arcsec = 0.58 * (2 / 4)
+                    thick_extent_arcsec = 0.58 * (6 / 4)
+                elif 'SWB' in aperture_name:
+                    thin_extent_arcsec = 0.27 * (2 / 4)
+                    thick_extent_arcsec = 0.27 * (6 / 4)
+                else:
+                    raise RuntimeError("Invalid mask!")
 
-            x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
-            y_verts = np.array([
-                thin_extent_arcsec / arcsec_per_pixel,
-                thick_extent_arcsec / arcsec_per_pixel,
-                -thick_extent_arcsec / arcsec_per_pixel,
-                -thin_extent_arcsec / arcsec_per_pixel
-            ])
-            x_idl_verts, y_idl_verts = aperture.Sci2Idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
-            verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
-            patch = patches.Polygon(verts, alpha=0.5)
-            self._mask_artist = self.detector_ax.add_artist(patch)
+                x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
+                y_verts = np.array([
+                    thin_extent_arcsec / arcsec_per_pixel,
+                    thick_extent_arcsec / arcsec_per_pixel,
+                    -thick_extent_arcsec / arcsec_per_pixel,
+                    -thin_extent_arcsec / arcsec_per_pixel
+                ])
+                x_idl_verts, y_idl_verts = aperture.Sci2Idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
+                verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
+                patch = patches.Polygon(verts, alpha=0.5)
+                mask_patches.append(patch)
+                # self._mask_artist = self.detector_ax.add_artist(patch)
+            mask_collection = PatchCollection(mask_patches)
+            self._mask_artist = self.detector_ax.add_artist(mask_collection)
         elif 'MIRI' in aperture_name:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
             if 'LYOT' in aperture_name:
