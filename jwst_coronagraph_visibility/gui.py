@@ -452,28 +452,12 @@ class VisibilityCalculator(object):
         frame.columnconfigure(0, weight=1)
 
     def _build_examples_menu(self, menu):
-        menu.add_command(label="Fomalhaut", command=self._ex_fomalhaut)
-        menu.add_command(label="1RXS J160929.1-210524", command=self._ex_1RXSJ160929p1_210524)
-        menu.add_command(label="HR 8799", command=self._ex_HR8799)
+        menu.add_command(label="Single companion, NIRCam 210R spot",
+                         command=self._ex_single_companion)
+        menu.add_command(label="Three companions, MIRI 4QPM", command=self._ex_three_companions)
+        menu.add_command(label="North Ecliptic Pole, NIRCam long wavelength bar", command=self._ex_north_ecliptic)
 
-    def _build_examples_frame(self, frame):
-        ttk.Button(
-            frame,
-            text="Fomalhaut",
-            command=self._ex_fomalhaut
-        ).grid(column=0, row=0, sticky=(E, W))
-        ttk.Button(
-            frame,
-            text="1RXS J160929.1-210524",
-            command=self._ex_1RXSJ160929p1_210524
-        ).grid(column=0, row=1, sticky=(E, W))
-        ttk.Button(
-            frame,
-            text="HR 8799",
-            command=self._ex_HR8799
-        ).grid(column=0, row=2, sticky=(E, W))
-
-    def _ex_fomalhaut(self):
+    def _ex_single_companion(self):
         ra=344.41269
         dec=-29.62224
         pa1=325
@@ -500,40 +484,10 @@ class VisibilityCalculator(object):
         sep.set(0)
         self.instrument_value.set(self.NIRCAM_A)
         self.apername_value.set(apername)
-        self.simbad_id.set("Fomalhaut")
+        self.simbad_id.set("Example: Single companion")
         self.update_plot()
 
-    def _ex_1RXSJ160929p1_210524(self):
-        ra=242.37628
-        dec=-21.08304
-        pa1=20
-        pa2=0
-        pa3=0
-        separation_as1=3
-        separation_as2=0
-        separation_as3=0
-        apername='NRCB3_MASKSWB'
-
-        self.ra_value.set(ra)
-        self.dec_value.set(dec)
-        visible, pa, sep = self.companions[0]
-        visible.set(True)
-        pa.set(pa1)
-        sep.set(separation_as1)
-        visible, pa, sep = self.companions[1]
-        visible.set(False)
-        pa.set(0)
-        sep.set(0)
-        visible, pa, sep = self.companions[2]
-        visible.set(False)
-        pa.set(0)
-        sep.set(0)
-        self.instrument_value.set(self.NIRCAM_B)
-        self.apername_value.set(apername)
-        self.simbad_id.set("1RXS J160929.1-210524")
-        self.update_plot()
-
-    def _ex_HR8799(self):
+    def _ex_three_companions(self):
         ra=346.86965
         dec=21.13425
         pa1=45
@@ -542,7 +496,7 @@ class VisibilityCalculator(object):
         separation_as1=1.7
         separation_as2=1
         separation_as3=0.65
-        apername='MIRIM_MASK1065'
+        apername='MIRIM_CORON1065'
 
         self.ra_value.set(ra)
         self.dec_value.set(dec)
@@ -561,7 +515,38 @@ class VisibilityCalculator(object):
 
         self.instrument_value.set(self.MIRI)
         self.apername_value.set(apername)
-        self.simbad_id.set("HR 8799")
+        self.simbad_id.set("Example: Three companions")
+        self.update_plot()
+
+    def _ex_north_ecliptic(self):
+        ra=270.0
+        dec=66.5
+        pa1=0
+        pa2=120
+        pa3=270
+        separation_as1=3
+        separation_as2=5
+        separation_as3=10
+        apername='NRCA5_MASKLWB'
+
+        self.ra_value.set(ra)
+        self.dec_value.set(dec)
+        visible, pa, sep = self.companions[0]
+        visible.set(True)
+        pa.set(pa1)
+        sep.set(separation_as1)
+        visible, pa, sep = self.companions[1]
+        visible.set(True)
+        pa.set(pa2)
+        sep.set(separation_as2)
+        visible, pa, sep = self.companions[2]
+        visible.set(True)
+        pa.set(pa3)
+        sep.set(separation_as3)
+
+        self.instrument_value.set(self.NIRCAM_A)
+        self.apername_value.set(apername)
+        self.simbad_id.set("Example: North Ecliptic Pole")
         self.update_plot()
 
     def _build_date_controls(self, frame):
@@ -738,7 +723,7 @@ class VisibilityCalculator(object):
         # initialized when the plot is updated:
         self._pick_event_handler_id = None
         self._plot_overlay_elements = []
-        self._mask_artist = None
+        self._mask_artists = []
 
         obs_axes = (0.1, 0.3, 0.35, 0.6)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
@@ -1079,7 +1064,7 @@ class VisibilityCalculator(object):
             y_size=aperture.YSciSize,
             scale=arcsec_per_pixel,
         ))
-        self._mask_artist = None
+        self._mask_artists = []
         ax.set_aspect('equal')
 
         aper_corners_x, aper_corners_y = aperture.corners(frame='Idl')
@@ -1099,15 +1084,17 @@ class VisibilityCalculator(object):
         self._overlay_mask()
 
     def _overlay_mask(self):
-        if self._mask_artist is not None:
-            self._mask_artist.remove()
+        while self._mask_artists:
+            artist = self._mask_artists.pop()
+            artist.remove()
+
         aperture = self.result.aperture
         aperture_name = aperture.AperName
         arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
+        mask_patches = []
 
         if 'NRC' in aperture_name:
-            mask_patches = []
             for quad_verts in NIRCAM_CORON_BAD_AREAS:
                 v2, v3 = quad_verts[:,0], quad_verts[:,1]
                 xidl, yidl = aperture.Tel2Idl(v2, v3)
@@ -1146,20 +1133,16 @@ class VisibilityCalculator(object):
                 verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
                 patch = patches.Polygon(verts, alpha=0.5)
                 mask_patches.append(patch)
-                # self._mask_artist = self.detector_ax.add_artist(patch)
-            mask_collection = PatchCollection(mask_patches)
-            self._mask_artist = self.detector_ax.add_artist(mask_collection)
+                # self._mask_artists = self.detector_ax.add_artist(patch)
         elif 'MIRI' in aperture_name:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
+            corners_x, corners_y = aperture.corners(frame='Idl')
+            min_x, min_y = np.min(corners_x), np.min(corners_y)
+            max_x, max_y = np.max(corners_x), np.max(corners_y)
+
             if 'LYOT' in aperture_name:
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the Lyot is 272x272 pixels
-                min_x, min_y = aperture.Det2Idl(-272 // 2 + aperture.XDetRef, -272 // 2 + aperture.YDetRef)
-                max_x, max_y = aperture.Det2Idl(272 // 2 + aperture.XDetRef, 272 // 2 + aperture.YDetRef)
-                self.detector_ax.plot(
-                    [min_x, max_x, max_x, min_x, min_x],
-                    [min_y, min_y, max_y, max_y, min_y]
-                )
 
                 width_arcsec = 0.72
                 x_verts = width_arcsec * np.array([-1, -1, 1, 1]) / 2
@@ -1173,18 +1156,11 @@ class VisibilityCalculator(object):
                 radius_arcsec = 2.16
                 circular_part = patches.Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
-                self._mask_artist = self.detector_ax.add_artist(mask_collection)
+                mask_patches.append(mask_collection)
             elif '1065' in aperture_name or '1140' in aperture_name or '1550' in aperture_name:
                 width_arcsec = 0.33
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the 4QPM is 216x216 pixels
-                min_x, min_y = aperture.Det2Idl(-216 // 2 + aperture.XDetRef, -216 // 2 + aperture.YDetRef)
-                max_x, max_y = aperture.Det2Idl(216 // 2 + aperture.XDetRef, 216 // 2 + aperture.YDetRef)
-                self.detector_ax.plot(
-                    [min_x, max_x, max_x, min_x, min_x],
-                    [min_y, min_y, max_y, max_y, min_y]
-                )
-
                 x_verts = np.array([
                     min_x,
                     -width_arcsec,
@@ -1217,11 +1193,12 @@ class VisibilityCalculator(object):
                 y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
 
                 verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
-                mask = patches.Polygon(verts, alpha=0.5)
-                self._mask_artist = self.detector_ax.add_artist(mask)
+                mask_patches.append(patches.Polygon(verts, alpha=0.5))
             else:
                 raise RuntimeError("Invalid mask!")
 
+        for patch in mask_patches:
+            self._mask_artists.append(self.detector_ax.add_artist(patch))
 
 
 def run():
