@@ -32,6 +32,7 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
+from matplotlib.text import Annotation
 import numpy as np
 import requests
 import requests.exceptions
@@ -84,6 +85,8 @@ _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
     _NIRCAM_SIAF['NRCA5_MASKLWB'],
     _NIRCAM_SIAF['NRCA5_FULL']
 )
+
+_MIRI_SIAF = SIAF('MIRI')
 
 # These bad areas were defined in raw detector pixel coordinates by
 # John Stansberry using a backlit image of NIRCam A5 through the
@@ -1092,7 +1095,32 @@ class VisibilityCalculator(object):
         aperture_name = aperture.AperName
         arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
-        mask_patches = []
+        mask_artists = []
+
+        def _overlay_miri_ta_positions():
+            '''MIRI has eight target acq locations for each coronagraph which could result in persistence'''
+            ta_loc_spot_radius = 0.2 # arcsec
+            mask_name = re.match(r'MIRIM_CORON(\d+|LYOT)', aperture.AperName).groups()[0]
+            ta_apers = [
+                'MIRIM_TA{}_LL',
+                'MIRIM_TA{}_LR',
+                'MIRIM_TA{}_CLL',
+                'MIRIM_TA{}_CLR',
+                'MIRIM_TA{}_CUL',
+                'MIRIM_TA{}_CUR',
+                'MIRIM_TA{}_UR',
+                'MIRIM_TA{}_UL'
+            ]
+            for ta_aper in ta_apers:
+                mask_ta_aper = ta_aper.format(mask_name)
+                ta_loc = aperture.Tel2Idl(_MIRI_SIAF[mask_ta_aper].V2Ref, _MIRI_SIAF[mask_ta_aper].V3Ref)
+                mask_artists.append(patches.Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT))
+                mask_artists.append(Annotation(
+                    mask_ta_aper.rsplit('_')[-1],
+                    ta_loc,
+                    xytext=(ta_loc[0], ta_loc[1] + 0.25),
+                    horizontalalignment='center',
+                ))
 
         if 'NRC' in aperture_name:
             for quad_verts in NIRCAM_CORON_BAD_AREAS:
@@ -1100,7 +1128,7 @@ class VisibilityCalculator(object):
                 xidl, yidl = aperture.Tel2Idl(v2, v3)
                 idl_verts = np.concatenate([xidl[:,np.newaxis], yidl[:,np.newaxis]], axis=1)
                 patch = patches.Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
-                mask_patches.append(patch)
+                mask_artists.append(patch)
             if aperture_name[-1] == 'R':
                 if '210R' in aperture_name:
                     radius_arcsec = 0.40
@@ -1111,7 +1139,7 @@ class VisibilityCalculator(object):
                 else:
                     raise RuntimeError("Invalid mask!")
                 # make a circle
-                mask_patches.append(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
+                mask_artists.append(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
             else:
                 if 'LWB' in aperture_name:
                     thin_extent_arcsec = 0.58 * (2 / 4)
@@ -1132,13 +1160,15 @@ class VisibilityCalculator(object):
                 x_idl_verts, y_idl_verts = aperture.Sci2Idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
                 verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
                 patch = patches.Polygon(verts, alpha=0.5)
-                mask_patches.append(patch)
+                mask_artists.append(patch)
                 # self._mask_artists = self.detector_ax.add_artist(patch)
         elif 'MIRI' in aperture_name:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
             corners_x, corners_y = aperture.corners(frame='Idl')
             min_x, min_y = np.min(corners_x), np.min(corners_y)
             max_x, max_y = np.max(corners_x), np.max(corners_y)
+
+            _overlay_miri_ta_positions()
 
             if 'LYOT' in aperture_name:
                 # David Law, personal communication, May 2016:
@@ -1156,7 +1186,7 @@ class VisibilityCalculator(object):
                 radius_arcsec = 2.16
                 circular_part = patches.Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
-                mask_patches.append(mask_collection)
+                mask_artists.append(mask_collection)
             elif '1065' in aperture_name or '1140' in aperture_name or '1550' in aperture_name:
                 width_arcsec = 0.33
                 # David Law, personal communication, May 2016:
@@ -1193,11 +1223,11 @@ class VisibilityCalculator(object):
                 y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
 
                 verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
-                mask_patches.append(patches.Polygon(verts, alpha=0.5))
+                mask_artists.append(patches.Polygon(verts, alpha=0.5))
             else:
                 raise RuntimeError("Invalid mask!")
 
-        for patch in mask_patches:
+        for patch in mask_artists:
             self._mask_artists.append(self.detector_ax.add_artist(patch))
 
 
