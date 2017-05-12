@@ -727,6 +727,11 @@ class VisibilityCalculator(object):
         obs_axes = (0.1, 0.3, 0.35, 0.6)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
 
+        self.observable_pa = matplotlib.text.Text(x=0.1, y=0.098, text="PA =", transform=self.figure.transFigure, figure=self.figure)
+        self.figure.texts.append(self.observable_pa)
+        self.observable_day = matplotlib.text.Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure, figure=self.figure)
+        self.figure.texts.append(self.observable_day)
+
         detector_axes = (0.55, 0.3, 0.4, 0.6)
         self.detector_ax = self.figure.add_axes(detector_axes)
         self.detector_ax.set_aspect('equal', anchor='SE')
@@ -735,10 +740,9 @@ class VisibilityCalculator(object):
         self.companion_legend_markers = []
         self.companion_legend_labels = []
         self.companion_info = []
-        v_pos = 0.2
-        self.observable_pa = matplotlib.text.Text(x=0.55, y=v_pos, text="PA:", transform=self.figure.transFigure, figure=self.figure)
-        self.figure.texts.append(self.observable_pa)
 
+
+        v_pos = 0.2
         line_height = 0.04
         for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
             v_pos -= line_height
@@ -1012,6 +1016,7 @@ class VisibilityCalculator(object):
             pa_label=pa_label,
             pa=self._theta[yidx, xidx],
         ))
+        self.observable_day.set_text("Day of year = {}".format(int(self._days_for_all_rolls[yidx, xidx])))
 
         for idx, companion in enumerate(self.result.companions):
             if companion['separation'] == 0:
