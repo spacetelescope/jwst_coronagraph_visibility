@@ -43,5 +43,5 @@ To build a maximally backwards compatible bundle using the ``banana`` build mach
    pip install --user .
    make app
    cd dist
-   zip -r jwst_coronagraph_visibility_calculator_macos.zip ./JWST\ Coronagraph\ Visibility\ Tool.app/
-   mv jwst_coronagraph_visibility_calculator_macos.zip /user/$USER/
+   zip -r jwst_coronagraph_visibility_tool_macos.zip ./JWST\ Coronagraph\ Visibility\ Tool.app/
+   mv jwst_coronagraph_visibility_tool_macos.zip /user/$USER/
