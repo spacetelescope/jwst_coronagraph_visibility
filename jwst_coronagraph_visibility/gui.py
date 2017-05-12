@@ -1075,6 +1075,8 @@ class VisibilityCalculator(object):
         patch = patches.Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
         ax.add_artist(patch)
 
+        self._overlay_mask()
+
         self.c1_plot_group = ax.scatter(self.result.c1_x, self.result.c1_y, picker=True, color=RED_GGPLOT)
         self.c2_plot_group = ax.scatter(self.result.c2_x, self.result.c2_y, picker=True, color=BLUE_GGPLOT)
         self.c3_plot_group = ax.scatter(self.result.c3_x, self.result.c3_y, picker=True, color=PURPLE_GGPLOT)
@@ -1084,7 +1086,7 @@ class VisibilityCalculator(object):
         ax.set_xlabel('x (arcsec, ideal frame)')
         ax.set_ylabel('y (arcsec, ideal frame)')
 
-        self._overlay_mask()
+
 
     def _overlay_mask(self):
         while self._mask_artists:
@@ -1102,24 +1104,29 @@ class VisibilityCalculator(object):
             ta_loc_spot_radius = 0.2 # arcsec
             mask_name = re.match(r'MIRIM_CORON(\d+|LYOT)', aperture.AperName).groups()[0]
             ta_apers = [
-                'MIRIM_TA{}_LL',
-                'MIRIM_TA{}_LR',
-                'MIRIM_TA{}_CLL',
-                'MIRIM_TA{}_CLR',
-                'MIRIM_TA{}_CUL',
-                'MIRIM_TA{}_CUR',
-                'MIRIM_TA{}_UR',
-                'MIRIM_TA{}_UL'
+                'MIRIM_TA{}_LL', 'MIRIM_TA{}_CLL',
+                'MIRIM_TA{}_LR', 'MIRIM_TA{}_CLR',
+                'MIRIM_TA{}_UL', 'MIRIM_TA{}_CUL',
+                'MIRIM_TA{}_UR', 'MIRIM_TA{}_CUR',
             ]
+            ta_apt_name_lookup = {
+                'UR': 1,
+                'UL': 2,
+                'LL': 3,
+                'LR': 4,
+            }
             for ta_aper in ta_apers:
                 mask_ta_aper = ta_aper.format(mask_name)
                 ta_loc = aperture.Tel2Idl(_MIRI_SIAF[mask_ta_aper].V2Ref, _MIRI_SIAF[mask_ta_aper].V3Ref)
-                mask_artists.append(patches.Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT))
+                mask_artists.append(patches.Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT, alpha=0.25))
+                quadrant = mask_ta_aper[-2:]
+
                 mask_artists.append(Annotation(
-                    mask_ta_aper.rsplit('_')[-1],
+                    'TA {}'.format(ta_apt_name_lookup[quadrant]),
                     ta_loc,
                     xytext=(ta_loc[0], ta_loc[1] + 0.25),
                     horizontalalignment='center',
+                    alpha=0.5,
                 ))
 
         if 'NRC' in aperture_name:
