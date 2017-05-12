@@ -313,6 +313,7 @@ class VisibilityCalculator(object):
     APERTURE_PA = 1
     V3_PA = 2
     USER_SUPPLIED_COORDS_MSG = '(User-supplied coordinates)'
+    START_DATE = datetime.datetime(2019, 1, 1)
 
     def __init__(self):
         self.root = Tk()
@@ -556,23 +557,15 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _build_date_controls(self, frame):
-        date_label = ttk.Label(frame, text="Start date: October 1,")
-        date_label.grid(column=0, row=0, sticky=(N, W))
-
-        self.year_value = StringVar()
-        self.year_value.set(self.start_year)
-        year_label = ttk.Label(frame, textvariable=self.year_value, width=5)
-        year_label.grid(column=1, row=0, sticky=(N, E, W))
-
-        ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=1, sticky=(N, W))
+        ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=0, sticky=(N, W))
         self.npoints_value = StringVar()
         self.npoints_value.set(DEFAULT_NPOINTS)
-        ttk.Entry(frame, textvariable=self.npoints_value, width=5).grid(column=1, row=1, sticky=(N, E, W))
+        ttk.Entry(frame, textvariable=self.npoints_value, width=5).grid(column=1, row=0, sticky=(N, E, W))
 
         self.nrolls_value = StringVar()
-        ttk.Label(frame, text="Rolls checked:").grid(column=0, row=2, sticky=(N, W))
+        ttk.Label(frame, text="Rolls checked:").grid(column=0, row=1, sticky=(N, W))
         self.nrolls_value.set(DEFAULT_NROLLS)
-        ttk.Entry(frame, textvariable=self.nrolls_value, width=5).grid(column=1, row=2, sticky=(N, E, W))
+        ttk.Entry(frame, textvariable=self.nrolls_value, width=5).grid(column=1, row=1, sticky=(N, E, W))
 
     def _build_simbad_lookup(self, frame):
         # SIMBAD lookup
@@ -828,14 +821,6 @@ class VisibilityCalculator(object):
             self.error_modal("Number of points and roll angle sampling must be integers")
             return
 
-        try:
-            start_year = int(self.year_value.get())
-            if start_year < 2000:
-                raise ValueError("sun_ecliptic_longitude works for years after 2000 only")
-            start_date = datetime.datetime(start_year, 10, 1)
-        except ValueError:
-            self.error_modal("Supply a four-digit year after 2000")
-
         # ugly loop unroll for the 3 companions
         shown, pa, sep = self.companions[0]
         if shown.get():
@@ -882,7 +867,7 @@ class VisibilityCalculator(object):
                     {'pa': pa3, 'separation': separation_as3},
                 ],
                 aper,
-                start_date,
+                self.START_DATE,
                 npoints,
                 nrolls
             )
@@ -960,7 +945,7 @@ class VisibilityCalculator(object):
         self._pa_series = ax.scatter(days_for_all_rolls, theta, color=pa_color, label=pa_label, picker=True)
 
         ax.set_xlim(0, 366)
-        ax.set_xlabel('Days since Oct 1 {}'.format(self.result.start_date.year))
+        ax.set_xlabel('Day of year (from Jan 1)')
         legend = ax.legend(
             (elongation_line, observable_series, self._pa_series),
             ('Solar elongation', 'Observable elongations', pa_label),
