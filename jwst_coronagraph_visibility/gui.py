@@ -324,6 +324,7 @@ class VisibilityCalculator(object):
 
         self.root.protocol("WM_DELETE_WINDOW", close_app)
         self.start_year = max(datetime.datetime.today().year, 2018)
+        self.result = None
         self._build()
 
     def start(self):
@@ -448,6 +449,8 @@ class VisibilityCalculator(object):
         self.update_button.grid(column=0, row=5, sticky=(E, W))
         self.progress = ttk.Progressbar(frame, orient='horizontal', mode='indeterminate')
         self.progress.grid(column=0, row=6, sticky=(E, W))
+        self.zoom_button = ttk.Button(frame, text="Zoom to fit", command=self.zoom_to_fit)
+        self.zoom_button.grid(column=0, row=7, sticky=(E, W))
         #
         # examples_frame = ttk.LabelFrame(frame, text="Examples")
         # self._build_examples_frame(examples_frame)
@@ -894,6 +897,15 @@ class VisibilityCalculator(object):
 
         self.progress.stop()
         self.update_button.config(state='normal')
+
+    def zoom_to_fit(self):
+        if self.result is None:
+            return
+        max_separation = max([c['separation'] for c in self.result.companions])
+        fudge_factor = 1.2
+        self.detector_ax.set_xlim(-fudge_factor * max_separation, fudge_factor * max_separation)
+        self.detector_ax.set_ylim(-fudge_factor * max_separation, fudge_factor * max_separation)
+        self._canvas.show()
 
     def _update_observability(self):
         days = self.result.days
