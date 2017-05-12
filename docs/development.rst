@@ -14,15 +14,43 @@ Documentation is reST processed by Sphinx. Generate the HTML copy of the documen
 
 and open ``_build/html/index.html`` to see the result.
 
-AstroConda
-==========
+Preparing to release
+====================
 
-*Instructions for updating the tool in AstroConda will be added after the tool is packaged for AstroConda.*
+1. Ensure that the test suite passes: ``pytest``.
+2. Remove ``dev`` from the version number in ``setup.py``.
+3. Commit and tag: ``git commit -am "Releasing 0.x.y"``, ``git tag 0.x.y``.
+4. Push the tag: ``git push --tags origin`` or ``git push --tags upstream``.
+5. Update the version number in ``setup.py`` and add ``dev`` to the end.
+6. Commit: ``git commit -am "Back to development: 0.x.y"``.
+7. Push changes to GitHub.
+
+Releasing
+=========
+
+To release on PyPI
+------------------
+
+1. Follow the `instructions from PyPA <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_ to set up ``twine`` and login credentials.
+2. Create the sdist: ``python setup.py sdist``
+3. Create a universal wheel: ``python setup.py bdist_wheel --universal``
+4. Upload to PyPI: ``twine upload dist/*``
+
+To release through AstroConda
+-----------------------------
+
+1. Fork `astroconda/astroconda-contrib <https://github.com/astroconda/astroconda-contrib>`_ to your GitHub, if you haven't already.
+2. Clone your fork locally (or pull upstream changes, if you already have a local clone).
+3. Check out a feature branch like this: ``git checkout -b jwst_coronagraph_visibility-0.x.y``.
+4. Update the version number in ``astroconda-contrib/jwst_coronagraph_visibility/meta.yaml`` (along with any version requirements on upstream dependencies).
+5. Commit your changes.
+6. Push to GitHub.
+7. Open a pull request against `astroconda/astroconda-contrib <https://github.com/astroconda/astroconda-contrib>`_.
 
 App bundles for macOS
 =====================
 
-To build the Mac ``.app`` bundle, run ``make app`` from the repository root with PyInstaller and pytest installed.
+To build the macOS ``.app`` bundle, run ``make app`` from the repository root with PyInstaller and pytest installed.
 
 To build a maximally backwards compatible bundle using the ``banana`` build machine at STScI::
 
