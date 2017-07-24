@@ -491,6 +491,7 @@ class VisibilityCalculator(object):
         sep.set(0)
         self.instrument_value.set(self.NIRCAM_A)
         self.apername_value.set(apername)
+        self._clear_simbad_entry()
         self.simbad_id.set("Example: Single companion")
         self.update_plot()
 
@@ -522,6 +523,7 @@ class VisibilityCalculator(object):
 
         self.instrument_value.set(self.MIRI)
         self.apername_value.set(apername)
+        self._clear_simbad_entry()
         self.simbad_id.set("Example: Three companions")
         self.update_plot()
 
@@ -553,6 +555,7 @@ class VisibilityCalculator(object):
 
         self.instrument_value.set(self.NIRCAM_A)
         self.apername_value.set(apername)
+        self._clear_simbad_entry()
         self.simbad_id.set("Example: North Ecliptic Pole")
         self.update_plot()
 
@@ -566,6 +569,14 @@ class VisibilityCalculator(object):
         ttk.Label(frame, text="Rolls checked:").grid(column=0, row=1, sticky=(N, W))
         self.nrolls_value.set(DEFAULT_NROLLS)
         ttk.Entry(frame, textvariable=self.nrolls_value, width=5).grid(column=1, row=1, sticky=(N, E, W))
+
+    # Clear the SIMBAD ID when user edits RA or Dec
+    def _clear_simbad_id(self, *_):
+        self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
+
+    def _clear_simbad_entry(self, *_):
+        self.simbad_query.set('')
+        self._clear_simbad_id()
 
     def _build_simbad_lookup(self, frame):
         # SIMBAD lookup
@@ -607,10 +618,6 @@ class VisibilityCalculator(object):
         ecliptic_display = ttk.Label(frame, textvariable=self.ecliptic_value)
         ecliptic_display.grid(column=0, row=6, sticky=(N, W, E), columnspan=4)
 
-        # Clear the SIMBAD ID when user edits RA or Dec
-        def _clear_simbad_id(*_):
-            self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
-
         def _update_ecliptic(*_):
             try:
                  ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
@@ -625,8 +632,12 @@ class VisibilityCalculator(object):
             self.ecliptic_value.set(ecliptic_display_val)
 
         for var in (self.ra_value, self.dec_value):
-            var.trace('w', _clear_simbad_id)
+            var.trace('w', self._clear_simbad_id)
             var.trace('w', _update_ecliptic)
+
+        # Clear the SIMBAD entry field when user types in RA or Dec
+        for entry in (ra_entry, dec_entry):
+            entry.bind('<Key>', lambda evt: self._clear_simbad_entry())
 
         frame.columnconfigure(1, weight=1)
 
