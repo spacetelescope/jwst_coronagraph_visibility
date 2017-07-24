@@ -32,6 +32,7 @@ To release on PyPI
 ------------------
 
 1. Follow the `instructions from PyPA <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_ to set up ``twine`` and login credentials.
+2. Check out the just-tagged commit: ``git checkout 0.x.y``
 2. Create the sdist: ``python setup.py sdist``
 3. Create a universal wheel: ``python setup.py bdist_wheel --universal``
 4. Upload to PyPI: ``twine upload dist/*``
