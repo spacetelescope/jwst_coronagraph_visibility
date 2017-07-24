@@ -1150,16 +1150,17 @@ class VisibilityCalculator(object):
                 # make a circle
                 mask_artists.append(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
             else:
+                x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
                 if 'LWB' in aperture_name:
                     thin_extent_arcsec = 0.58 * (2 / 4)
                     thick_extent_arcsec = 0.58 * (6 / 4)
+                    x_verts *= -1  # flip LWB left to right
                 elif 'SWB' in aperture_name:
                     thin_extent_arcsec = 0.27 * (2 / 4)
                     thick_extent_arcsec = 0.27 * (6 / 4)
                 else:
                     raise RuntimeError("Invalid mask!")
 
-                x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
                 y_verts = np.array([
                     thin_extent_arcsec / arcsec_per_pixel,
                     thick_extent_arcsec / arcsec_per_pixel,
