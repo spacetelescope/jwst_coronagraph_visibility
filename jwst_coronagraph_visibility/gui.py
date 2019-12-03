@@ -26,7 +26,6 @@ from matplotlib import patches
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 try:
     from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
 except ImportError:
