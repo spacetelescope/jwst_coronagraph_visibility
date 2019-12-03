@@ -31,7 +31,6 @@ setup(
 
     # Author details
     author='Space Telescope Science Institute',
-    author_email='help@stsci.edu',
 
     # Choose your license
     license='MIT',
@@ -102,5 +101,9 @@ setup(
         'gui_scripts': [
             'jwst-coronagraph-visibility-gui=jwst_coronagraph_visibility.gui:run',
         ],
+    },
+
+    project_urls={  # Optional
+        'JWST Help Desk': 'https://jwsthelp.stsci.edu',
     },
 )
