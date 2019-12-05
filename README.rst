@@ -3,11 +3,11 @@ JWST Coronagraph Visibility Tool
 
 Current version: 0.3.0 (beta).
 
-`Download for macOS (31 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.3.0/jwst_coronagraph_visibility-0.3.0-macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.3.0.zip>`_
+`Download for macOS (31 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.3.0/jwst_coronagraph_visibility-0.3.0-macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.3.0.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
 
 **Report any issues at https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/new or via email to the authors.**
 
-*Authors: Christopher Stark (cstark@stsci.edu), Joseph Long (jlong@stsci.edu)*
+*Authors: Christopher Stark (cstark@stsci.edu), Joseph Long, J. Brendan Hagan (hagan@stsci.edu)
 
 .. image:: screenshot.png
    :width: 60%
