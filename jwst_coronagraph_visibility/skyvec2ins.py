@@ -490,7 +490,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
                 reftelcoords1_rad[j, i, 0],
                 reftelcoords1_rad[j, i, 1]
             ]) * 206264.806247  # arcseconds
-            tempidlcoords1 = aper.tel_to_idl(temptelcoords1[0], temptelcoords1[1])
+            tempidlcoords1 = _Tel2Idl(aper, temptelcoords1[0], temptelcoords1[1])
             refidlcoords1[j, i] = tempidlcoords1
 
     # Detector coordinates of star and companion
@@ -499,3 +499,23 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
 
     # END OF DETECTOR POS SECTION
     return c1_x, c1_y
+
+    def _Tel2Idl(aper, V2, V3):
+    """ Convert Tel to Idl
+    input in arcsec, output in arcsec
+    This transformation involves going from global V2,V3 to local angles with respect to some
+    reference point, and possibly rotating the axes and/or flipping the parity of the X axis.
+    WARNING
+    --------
+    This is an implementation of the planar approximation, which is adequate for most
+    purposes but may not be for all. Error is about 1.7 mas at 10 arcminutes from the tangent
+    point. See JWST-STScI-1550 for more details.
+    """
+
+    dV2 = np.asarray(V2, dtype=float) - aper.V2Ref
+    dV3 = np.asarray(V3, dtype=float) - aper.V3Ref
+    ang = np.deg2rad(aper.V3IdlYAngle)
+
+    XIdl = aper.VIdlParity * (dV2 * np.cos(ang) - dV3 * np.sin(ang))
+    YIdl = dV2 * np.sin(ang) + dV3 * np.cos(ang)
+    return XIdl, YIdl
