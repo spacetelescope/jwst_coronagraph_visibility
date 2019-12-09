@@ -458,7 +458,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
     # That's where we want to stick the target
     # The centers of the coronagraphic masks correspond to the XDetRef & YDetRef
     # locations on the detector (according to Colin Cox)
-    cortelcoords = aper.Det2Tel(aper.XDetRef, aper.YDetRef)
+    cortelcoords = aper.det_to_tel(aper.XDetRef, aper.YDetRef)
     # convert arcseconds to radians
     cortelcoords_rad = np.asarray(cortelcoords) / 206264.806247
     # At this point, we have the coronagraph mask location in
@@ -490,7 +490,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
                 reftelcoords1_rad[j, i, 0],
                 reftelcoords1_rad[j, i, 1]
             ]) * 206264.806247  # arcseconds
-            tempidlcoords1 = aper.Tel2Idl(temptelcoords1[0], temptelcoords1[1])
+            tempidlcoords1 = aper.tel_to_idl(temptelcoords1[0], temptelcoords1[1])
             refidlcoords1[j, i] = tempidlcoords1
 
     # Detector coordinates of star and companion
