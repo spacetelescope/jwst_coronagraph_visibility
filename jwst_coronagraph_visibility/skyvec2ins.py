@@ -500,7 +500,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
     # END OF DETECTOR POS SECTION
     return c1_x, c1_y
 
-    def _Tel2Idl(aper, V2, V3):
+def _Tel2Idl(aper, V2, V3):
     """ Convert Tel to Idl
     input in arcsec, output in arcsec
     This transformation involves going from global V2,V3 to local angles with respect to some
