@@ -180,7 +180,11 @@ NIRCAM_CORON_BAD_AREAS[:,:,1] += _NIRCAM_CORON_OFFSET_TEL[1]
 NIRCAM_CORON_BAD_AREAS.flags.writeable = False
 
 def query_simbad(query_string):
-    response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    #response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    try:
+        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    except (requests.exceptions.ConnectionError):
+        return None
     body = response.text
     ra = dec = canonical_id = None
     for line in body.split('\n'):
