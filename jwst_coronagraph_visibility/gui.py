@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf8 :
+# hello
 from __future__ import print_function, division
 import sys
 try:
