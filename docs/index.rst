@@ -35,7 +35,7 @@ What are the prerequisites for installing the JWST Coronagraph Visibility Tool?
 
 The JWST Coronagraph Visibility Tool depends on:
 
- * Python 3.4, or 3.5
+ * Python 3.4 (or greater)
  * NumPy version 1.9.0 (or greater)
  * Matplotlib version 1.4.2 (or greater)
  * requests version 2.8.1 (or greater)
