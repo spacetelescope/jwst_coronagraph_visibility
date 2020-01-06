@@ -69,7 +69,7 @@ setup(
         'numpy>=1.9.0',
         'matplotlib>=1.4.2',
         'requests>=2.8.1',
-        'jwxml>=0.3.0',
+        'pysiaf>=0.3.1',
     ],
 
     # List additional groups of dependencies here (e.g. development
