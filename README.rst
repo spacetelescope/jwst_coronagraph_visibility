@@ -1,7 +1,7 @@
 JWST Coronagraph Visibility Tool
 ================================
 
-Current version: 0.4.0 (beta).
+Current version: 0.3.0 (beta).
 
 `Download for macOS (31 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.3.0/jwst_coronagraph_visibility-0.3.0-macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.3.0.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
 
@@ -34,12 +34,6 @@ Known Issues
 
 Release Notes
 -------------
-
-0.4.0
-^^^^^
-
-This release eliminates the dependency on the jwxml package and instead uses the pysiaf package for all SIAF information.
-
 
 0.3.0
 ^^^^^
