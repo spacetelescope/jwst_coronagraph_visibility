@@ -187,7 +187,7 @@ def query_simbad(query_string):
     ra = dec = canonical_id = None
     for line in body.split('\n'):
         if line[:2] == '%J' and ra is None:
-            match = re.match('%J (\d+\.\d+) ([+\-]\d+\.\d+) .+', line)
+            match = re.match(r'%J (\d+\.\d+) ([+\-]\d+\.\d+) .+', line)
             if match is None:
                 return None
             ra, dec = map(float, match.groups())
