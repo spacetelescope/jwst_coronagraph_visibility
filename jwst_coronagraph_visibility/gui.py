@@ -49,10 +49,8 @@ else:
 
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
-from jwxml import SIAF
-import jwxml
+import pysiaf
 from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
-
 from pprint import pprint
 
 RED_GGPLOT = '#E24A33'
@@ -80,17 +78,17 @@ def compute_v2v3_offset(aperture_a, aperture_b):
     to V2, V3 in two different apertures and computing the difference in
     the resulting Tel frame coordinates
     '''
-    x_a, y_a = aperture_a.Det2Tel(aperture_b.XDetRef,  aperture_b.YDetRef)
-    x_b, y_b = aperture_b.Det2Tel(aperture_b.XDetRef,  aperture_b.YDetRef)
+    x_a, y_a  = aperture_a.det_to_tel(aperture_b.XDetRef,  aperture_b.YDetRef)
+    x_b, y_b = aperture_b.det_to_tel(aperture_b.XDetRef,  aperture_b.YDetRef)
     return x_a - x_b, y_a - y_b
 
-_NIRCAM_SIAF = SIAF('NIRCam')
+_NIRCAM_SIAF = pysiaf.Siaf('NIRCam')
+_MIRI_SIAF = pysiaf.Siaf('MIRI')
+
 _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
     _NIRCAM_SIAF['NRCA5_MASKLWB'],
     _NIRCAM_SIAF['NRCA5_FULL']
 )
-
-_MIRI_SIAF = SIAF('MIRI')
 
 # These bad areas were defined in raw detector pixel coordinates by
 # John Stansberry using a backlit image of NIRCam A5 through the
@@ -182,12 +180,16 @@ NIRCAM_CORON_BAD_AREAS[:,:,1] += _NIRCAM_CORON_OFFSET_TEL[1]
 NIRCAM_CORON_BAD_AREAS.flags.writeable = False
 
 def query_simbad(query_string):
-    response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    #response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    try:
+        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    except (requests.exceptions.ConnectionError):
+        return None
     body = response.text
     ra = dec = canonical_id = None
     for line in body.split('\n'):
         if line[:2] == '%J' and ra is None:
-            match = re.match('%J (\d+\.\d+) ([+\-]\d+\.\d+) .+', line)
+            match = re.match(r'%J (\d+\.\d+) ([+\-]\d+\.\d+) .+', line)
             if match is None:
                 return None
             ra, dec = map(float, match.groups())
@@ -204,7 +206,7 @@ def query_simbad(query_string):
 def get_aperture(instrname, apername):
     # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
     # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
-    siaf = SIAF(instr=instrname)
+    siaf = pysiaf.Siaf(instrument = instrname)
     return siaf[apername]
 
 @contextmanager
@@ -1099,7 +1101,7 @@ class VisibilityCalculator(object):
         self._mask_artists = []
         ax.set_aspect('equal')
 
-        aper_corners_x, aper_corners_y = aperture.corners(frame='Idl')
+        aper_corners_x, aper_corners_y = aperture.corners(to_frame = 'idl')
         verts = np.concatenate([aper_corners_x[:,np.newaxis], aper_corners_y[:,np.newaxis]], axis=1)
         patch = patches.Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
         ax.add_artist(patch)
@@ -1146,7 +1148,7 @@ class VisibilityCalculator(object):
             }
             for ta_aper in ta_apers:
                 mask_ta_aper = ta_aper.format(mask_name)
-                ta_loc = aperture.Tel2Idl(_MIRI_SIAF[mask_ta_aper].V2Ref, _MIRI_SIAF[mask_ta_aper].V3Ref)
+                ta_loc = aperture.tel_to_idl(_MIRI_SIAF[mask_ta_aper].V2Ref, _MIRI_SIAF[mask_ta_aper].V3Ref)
                 mask_artists.append(patches.Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT, alpha=0.25))
                 quadrant = mask_ta_aper[-2:]
 
@@ -1161,7 +1163,7 @@ class VisibilityCalculator(object):
         if 'NRC' in aperture_name:
             for quad_verts in NIRCAM_CORON_BAD_AREAS:
                 v2, v3 = quad_verts[:,0], quad_verts[:,1]
-                xidl, yidl = aperture.Tel2Idl(v2, v3)
+                xidl, yidl = aperture.tel_to_idl(v2, v3)
                 idl_verts = np.concatenate([xidl[:,np.newaxis], yidl[:,np.newaxis]], axis=1)
                 patch = patches.Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
                 mask_artists.append(patch)
@@ -1194,14 +1196,14 @@ class VisibilityCalculator(object):
                     -thick_extent_arcsec / arcsec_per_pixel,
                     -thin_extent_arcsec / arcsec_per_pixel
                 ])
-                x_idl_verts, y_idl_verts = aperture.Sci2Idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
+                x_idl_verts, y_idl_verts = aperture.sci_to_idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
                 verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
                 patch = patches.Polygon(verts, alpha=0.5)
                 mask_artists.append(patch)
                 # self._mask_artists = self.detector_ax.add_artist(patch)
         elif 'MIRI' in aperture_name:
             y_angle = np.deg2rad(aperture.V3IdlYAngle)
-            corners_x, corners_y = aperture.corners(frame='Idl')
+            corners_x, corners_y = aperture.corners(to_frame='idl')
             min_x, min_y = np.min(corners_x), np.min(corners_y)
             max_x, max_y = np.max(corners_x), np.max(corners_y)
 
