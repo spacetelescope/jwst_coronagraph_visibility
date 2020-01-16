@@ -25,7 +25,7 @@ setup(
 
     description='JWST coronagraphic target observability calculator',
     long_description=long_description,
-
+    long_description_content_type='text/markdown',
     # The project's main homepage.
     url='https://github.com/spacetelescope/jwst_coronagraph_visibility',
 
@@ -59,7 +59,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['jwst_coronagraph_visibility'],
+    packages=find_packages(),
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
