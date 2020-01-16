@@ -55,7 +55,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'JWST Coronagraph Visibility Tool'
 copyright = '2016, Associated Universities for Research in Astronomy'
-author = 'Chris Stark, Joseph Long'
+author = 'Chris Stark, Joseph Long, J. Brendan Hagan'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -265,7 +265,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'JWSTCoronagraphVisibilityTool.tex', 'JWST Coronagraph Visibility Tool Documentation',
-     'Chris Stark, Joseph Long', 'manual'),
+     'Chris Stark, Joseph Long, J. Brendan Hagan', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

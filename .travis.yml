@@ -6,7 +6,8 @@ install:
 script:
 - pytest
 deploy:
-  provider: pypi  
+  provider: pypi
+  user: "__token__"  
   password:
     secure: SFxXFZpTEShqGKRO+2TXaXUKuREc2WWUuLPJVmX4mty8VKTyvQgl/8PqlBOtL1md0bOV7TdkFUqZzYAGVh98LJBmYiiecLfHZ+vQjYRnQuWCfLl1gSSJ5wZ4l0lsk6kzQ6R5rzI3uoawALO0c0aDMdzD1fO+qbxIFGa5alAaPI6uVdjgcPZ+YhKuXafM4leiAQQFZb9csMFhOiPE9vIv3+0qaaTxatTHcSpaSVxi7wEexYxS9q/1ribC9sU2lmDXkjp38+KT5eryTgozNgX+1Cj3otI6iuz8SQ6Ki44AZ241AzGp/cp4ExAXLM4Urlg+03U5GW12LIYXu/DoXcEgfHUnLOWEDmDJlzb4tm61FGJ36db+z98JruhSIKzN0Y4nf37y/QDgM6yWuEqBebRM4kPT/vwQu7RmZBPsxLCVMOxe/zCyYLaX6hvHqHWCGOR6nXoWFvKfDlLHtbrOFTgZOLjTePenWX5k65lk4l28Pj6R/9dZYlXLUpQI7cmbeaBAmGBp9SuoWgIySbEiSNPxUUfv2jn1L856p5hoNfT/AZmq8zkHZJrVXHAQt/WLEHmJ+fCmapdbP1C4jZZGZVHNsfNqY4rPlr97mlPj6dZY0SL876IE6s2TFfZw6kjitdWAxAFLcpPNwX2N7UKc+MsMSIoOqc5mmSlA0mI7CizPzfM=
   on:
