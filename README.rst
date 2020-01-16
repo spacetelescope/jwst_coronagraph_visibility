@@ -38,7 +38,7 @@ Release Notes
 0.4.0
 ^^^^^
 
-* This release discontinues use of the jwxml package and now uses the STScI supported `pysiaf` package for all information using the SIAF. This releases uses version 0.6.3 of `pysiaf` which uses PRDOPSSOC-M-026 as default for the JWST SIAF.
+* This release discontinues use of the ``jwxml`` package and now uses the STScI supported ``pysiaf`` package for all information using the SIAF. This releases uses version 0.6.3 of ``pysiaf`` which uses ``PRDOPSSOC-M-026`` as default for the JWST SIAF.
 * CVT no longer supports python 2.7
 
 0.3.0
