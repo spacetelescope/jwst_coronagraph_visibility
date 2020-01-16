@@ -35,6 +35,7 @@ To release on PyPI
 2. Check out the just-tagged commit: ``git checkout 0.x.y``
 2. Create the sdist: ``python setup.py sdist``
 3. Create a universal wheel: ``python setup.py bdist_wheel --universal``
+4. Check distribution is valid: ``twine check dist/*``
 4. Upload to PyPI: ``twine upload dist/*``
 
 To release through AstroConda
