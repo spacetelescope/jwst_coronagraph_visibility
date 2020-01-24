@@ -33,10 +33,11 @@ To release on PyPI
 
 1. Follow the `instructions from PyPA <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_ to set up ``twine`` and login credentials.
 2. Check out the just-tagged commit: ``git checkout 0.x.y``
-2. Create the sdist: ``python setup.py sdist``
-3. Create a universal wheel: ``python setup.py bdist_wheel --universal``
-4. Check distribution is valid: ``twine check dist/*``
-4. Upload to PyPI: ``twine upload dist/*``
+3. Create the sdist: ``python setup.py sdist``
+4. Create a universal wheel: ``python setup.py bdist_wheel --universal``
+5. Check distribution is valid: ``twine check dist/*``
+6. Test upload with ``twine upload --repository-url https://test.pypi.org/legacy/ dist/*``
+7. Upload to PyPI: ``twine upload dist/*``
 
 To release through AstroConda
 -----------------------------
