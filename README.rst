@@ -1,9 +1,10 @@
 JWST Coronagraph Visibility Tool
 ================================
 
-Current version: 0.4.1 (beta).
+Current version: 0.4.2 (beta).
+SIAF version: PRDOPSSOC-M-026
 
-`Download for macOS (31 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.1/jwst_coronagraph_visibility-0.4.1-macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.1.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
+`Download for macOS (31 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.2/jwst_coronagraph_visibility_tool_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.2.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
 
 **Report any issues at https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/new or via email to the authors.**
 
@@ -18,7 +19,7 @@ The allowed pointing of JWST leads to target visibility that depends on ecliptic
 
 We stress that the CVT is designed to provide quick illustrations of the possible observable orientations for a given target. As such, the CVT rapidly approximates JWST’s pointing restrictions and **does not query the official JWST Proposal Constraint Generator (PCG)**. The CVT does not include detailed pointing restrictions like Earth and Moon avoidance, etc. Additionally, results may differ from official constraints by a degree or so. **Users should treat the results as close approximations.**
 
-Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST. As of this writing (January 2020), the code includes its own copies of the PRDOPSSOC-M-026 version of the NIRCam and MIRI SIAFs.
+Additionally, detector geometry (e.g. conversion from sky coordinates to the instrument's ``Idl`` frame) is provided by the SIAF (Science Image Aperture File). The SIAF is a standardized format for manipulating instrument apertures and coordinate conversions, maintained by STScI as part of operating JWST.
 
 For installation instructions and usage instructions, see the `documentation <https://github.com/spacetelescope/jwst_coronagraph_visibility/blob/master/docs/index.rst>`_ on GitHub or ``docs/index.rst`` in this repository.
 
@@ -34,6 +35,11 @@ Known Issues
 
 Release Notes
 -------------
+
+0.4.2
+^^^^^
+* Update to fix bug in Mac OS app bundle.
+
 
 0.4.1
 ^^^^^
