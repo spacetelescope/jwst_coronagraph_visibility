@@ -100,7 +100,4 @@ setup(
         ],
     },
 
-    project_urls={  # Optional
-        'JWST Help Desk': 'https://jwsthelp.stsci.edu',
-    },
 )
