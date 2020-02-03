@@ -2,12 +2,12 @@
 # vim: set fileencoding=utf8 :
 from __future__ import print_function, division
 import sys
-try:
-    from tkinter import *
-    from tkinter import ttk
-except ImportError:
-    from Tkinter import *
-    import ttk
+#try:
+from tkinter import *
+from tkinter import ttk
+# except ImportError:
+#     from Tkinter import *
+#     import ttk
 import os
 import os.path
 import datetime
@@ -26,10 +26,10 @@ from matplotlib import patches
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
-try:
-    from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
-except ImportError:
-    from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
+# try:
+#     from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
+# except ImportError:
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # implement the default mpl key bindings
 from matplotlib.backend_bases import key_press_handler
@@ -776,10 +776,11 @@ class VisibilityCalculator(object):
             self.companion_info.append(info)
 
         self._canvas = FigureCanvasTkAgg(self.figure, master=frame)
-        try:
-            self._canvas.show()
-        except AttributeError:
-            self._canvas.draw()
+        self._canvas.draw()
+        # try:
+        #     self._canvas.show()
+        # except AttributeError:
+        #     self._canvas.draw()
         self._canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
         self._toolbar = NavigationToolbar2TkAgg(self._canvas, frame)
@@ -902,10 +903,11 @@ class VisibilityCalculator(object):
             if self._pick_event_handler_id is None:
                 self._pick_event_handler_id = self.figure.canvas.mpl_connect('pick_event', self._on_pick)
             self._update_detector()
-            try:
-                self._canvas.show()
-            except AttributeError:
-                self._canvas.draw()
+            self._canvas.draw()
+            # try:
+            #     self._canvas.show()
+            # except AttributeError:
+            #     self._canvas.draw()
 
         self.progress.stop()
         self.update_button.config(state='normal')
@@ -917,10 +919,11 @@ class VisibilityCalculator(object):
         fudge_factor = 1.2
         self.detector_ax.set_xlim(-fudge_factor * max_separation, fudge_factor * max_separation)
         self.detector_ax.set_ylim(-fudge_factor * max_separation, fudge_factor * max_separation)
-        try:
-            self._canvas.show()
-        except AttributeError:
-            self._canvas.draw()
+        self._canvas.draw()
+        # try:
+        #     self._canvas.show()
+        # except AttributeError:
+        #     self._canvas.draw()
 
     def _update_observability(self):
         days = self.result.days
@@ -1081,11 +1084,11 @@ class VisibilityCalculator(object):
         self._plot_overlay_elements.append(east_line)
         east_label = self.detector_ax.text(scale_factor / 2 * e_x_temp, scale_factor / 2 * e_y_temp, "E")
         self._plot_overlay_elements.append(east_label)
-
-        try:
-            self._canvas.show()
-        except AttributeError:
-            self._canvas.draw()
+        self._canvas.draw()
+        # try:
+        #     self._canvas.show()
+        # except AttributeError:
+        #     self._canvas.draw()
 
     def _update_detector(self):
         ax = self.detector_ax

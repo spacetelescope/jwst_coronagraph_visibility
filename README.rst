@@ -4,7 +4,7 @@ JWST Coronagraph Visibility Tool
 Current version: 0.4.2 (beta).
 SIAF version: PRDOPSSOC-M-026
 
-`Download for macOS (754.5 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.2/jwst_coronagraph_visibility_tool_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.2.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
+`Download for macOS (127 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.2/jwst_coronagraph_visibility_tool_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.2.zip>`_ | ``$ pip install jwst-coronagraph-visibility``
 
 **Report any issues at https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/new or via email to the authors.**
 
@@ -32,64 +32,3 @@ Known Issues
   * The CVT has only been tested on Mac and Linux. Issue reports from Windows users are welcome, and we will do our best to address them, but we are not testing the tool on Windows.
 
 *See issue tracker at* https://github.com/spacetelescope/jwst_coronagraph_visibility/issues.
-
-Release Notes
--------------
-
-0.4.2
-^^^^^
-* Update to fix bug in Mac OS app bundle.
-
-
-0.4.1
-^^^^^
-* Minor update to setup.py file that enables proper display of documentation on PyPI. No code was changed in this release, but a new release is necessary in order to update PyPI.
-
-0.4.0
-^^^^^
-
-* This release discontinues use of the ``jwxml`` package and now uses the STScI supported ``pysiaf`` package for all information using the SIAF. This releases uses version 0.6.3 of ``pysiaf`` which uses ``PRDOPSSOC-M-026`` as default for the JWST SIAF.
-* CVT no longer supports python 2.7
-
-0.3.0
-^^^^^
-
-This release fixes two issues with the GUI:
-
-  * `#15 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/15>`_ - NIRCam A long-wavelength bar mask was flipped left-to-right in the GUI but is now oriented correctly
-  * `#12 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/12>`_ - The SIMBAD search field is now cleared when user enters RA/Dec or chooses an example
-
-0.2.0
-^^^^^
-
-This release incorporates some minor improvements based on user feedback, as well as revised definitions of the science instrument apertures in the SIAF (version ``PRDOPSSOC-F-008``).
-
- * Add MIRI Target Acq positions to plot (`#5 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/5>`_)
- * Make the MIRI TA spots translucent and renamed by APT numbers (`#5 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/5>`_)
- * Add zoom to fit button (`#6 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/6>`_)
- * Make the calculation start on Jan 1 instead of Oct 1 (`#9 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/9>`_)
- * Show day of year in plot overlay (`#9 <https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/9>`_)
- * Update development instructions
-
-0.1.0
-^^^^^
-
-The tool has been renamed to ``jwst_coronagraph_visibility`` with the command to launch the GUI taking on the name ``jwst-coronagraph-visibility-gui``.
-
-``jwxml`` has been updated to ``PRDOPSSOC-E-002`` (v0.2.0), which is required for new aperture names used by this tool.
-
-NIRCam coronagraph ND squares and clips are now drawn in the right hand (detector) plot.
-
-A ``LICENSE`` file has been added to reflect availability under the 3-Clause BSD license.
-
-0.0.2
-^^^^^
-
-  * The SIAF is now bundled with the jwxml package, and targets PRDDEVSOC-D-012. This includes minor refinements to the transformations from sky coordinates to the coronagraph aperture coordinates.
-  * NIRCam Module B is no longer a selectable instrument.
-  * Add controls for the sampling of the roll angle and time of year.
-
-0.0.1
-^^^^^
-
-The first tagged release of the tool for internal and external testing. Target visibility plots from this tool should always be checked against APT for consistency, as this tool does not account for all of the same constraints (and is not intended to).

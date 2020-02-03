@@ -4,18 +4,16 @@ from PyInstaller.utils import hooks
 
 block_cipher = None
 
-
 hiddenimports = ["tkinter", "tkinter.filedialog"]
-pysiaf_hooks = hooks.collect_data_files('pysiaf')
 
 a = Analysis(['run_jwst_coronagraph_visibility.py'],
              pathex=['.'],
              binaries=None,
-             datas=pysiaf_hooks,
+             datas=hooks.collect_data_files('pysiaf'),
              hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
-             excludes=['PyQt5'],
+             excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
