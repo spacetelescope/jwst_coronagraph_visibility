@@ -1,4 +1,4 @@
 numpy>=1.17.2
-matplotlib>=2.2.4
+matplotlib>=3.1.1
 requests>=2.8.1
-pysiaf>=0.6.3
+pysiaf>=0.7.1
