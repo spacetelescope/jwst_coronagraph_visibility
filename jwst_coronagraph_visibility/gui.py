@@ -18,7 +18,6 @@ except ImportError:
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib import patches
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
@@ -28,8 +27,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 from matplotlib.collections import PatchCollection
-from matplotlib.patches import Polygon
-from matplotlib.text import Annotation
+from matplotlib.patches import Polygon, Rectangle, Circle
+from matplotlib.text import Annotation, Text
 import numpy as np
 import requests
 import requests.exceptions
@@ -737,9 +736,9 @@ class VisibilityCalculator(object):
         obs_axes = (0.1, 0.3, 0.35, 0.6)  # (left, bottom, width, height)
         self.observability_ax = self.figure.add_axes(obs_axes)
 
-        self.observable_pa = matplotlib.text.Text(x=0.1, y=0.098, text="PA =", transform=self.figure.transFigure, figure=self.figure)
+        self.observable_pa = Text(x=0.1, y=0.098, text="PA =", transform=self.figure.transFigure, figure=self.figure)
         self.figure.texts.append(self.observable_pa)
-        self.observable_day = matplotlib.text.Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure, figure=self.figure)
+        self.observable_day = Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure, figure=self.figure)
         self.figure.texts.append(self.observable_day)
 
         detector_axes = (0.55, 0.3, 0.4, 0.6)
@@ -756,15 +755,15 @@ class VisibilityCalculator(object):
         line_height = 0.04
         for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
             v_pos -= line_height
-            marker = matplotlib.patches.Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color, transform=self.figure.transFigure, figure=self.figure)
+            marker = Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color, transform=self.figure.transFigure, figure=self.figure)
             self.figure.patches.append(marker)
             self.companion_legend_markers.append(marker)
 
-            label = matplotlib.text.Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure, figure=self.figure)
+            label = Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure, figure=self.figure)
             self.figure.texts.append(label)
             self.companion_legend_labels.append(label)
 
-            info = matplotlib.text.Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure, figure=self.figure)
+            info = Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure, figure=self.figure)
             self.figure.texts.append(info)
             self.companion_info.append(info)
 
@@ -1083,7 +1082,7 @@ class VisibilityCalculator(object):
 
         aper_corners_x, aper_corners_y = aperture.corners(to_frame = 'idl')
         verts = np.concatenate([aper_corners_x[:,np.newaxis], aper_corners_y[:,np.newaxis]], axis=1)
-        patch = patches.Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
+        patch = Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
         ax.add_artist(patch)
 
         self._overlay_mask()
@@ -1129,7 +1128,7 @@ class VisibilityCalculator(object):
             for ta_aper in ta_apers:
                 mask_ta_aper = ta_aper.format(mask_name)
                 ta_loc = aperture.tel_to_idl(_MIRI_SIAF[mask_ta_aper].V2Ref, _MIRI_SIAF[mask_ta_aper].V3Ref)
-                mask_artists.append(patches.Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT, alpha=0.25))
+                mask_artists.append(Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT, alpha=0.25))
                 quadrant = mask_ta_aper[-2:]
 
                 mask_artists.append(Annotation(
@@ -1145,7 +1144,7 @@ class VisibilityCalculator(object):
                 v2, v3 = quad_verts[:,0], quad_verts[:,1]
                 xidl, yidl = aperture.tel_to_idl(v2, v3)
                 idl_verts = np.concatenate([xidl[:,np.newaxis], yidl[:,np.newaxis]], axis=1)
-                patch = patches.Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
+                patch = Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
                 mask_artists.append(patch)
             if aperture_name[-1] == 'R':
                 if '210R' in aperture_name:
@@ -1157,7 +1156,7 @@ class VisibilityCalculator(object):
                 else:
                     raise RuntimeError("Invalid mask!")
                 # make a circle
-                mask_artists.append(patches.Circle((0, 0), radius=radius_arcsec, alpha=0.5))
+                mask_artists.append(Circle((0, 0), radius=radius_arcsec, alpha=0.5))
             else:
                 x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
                 if 'LWB' in aperture_name:
@@ -1178,7 +1177,7 @@ class VisibilityCalculator(object):
                 ])
                 x_idl_verts, y_idl_verts = aperture.sci_to_idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
                 verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
-                patch = patches.Polygon(verts, alpha=0.5)
+                patch = Polygon(verts, alpha=0.5)
                 mask_artists.append(patch)
                 # self._mask_artists = self.detector_ax.add_artist(patch)
         elif 'MIRI' in aperture_name:
@@ -1200,10 +1199,10 @@ class VisibilityCalculator(object):
                 y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
 
                 verts = np.concatenate([x_verts[:,np.newaxis], y_verts[:,np.newaxis]], axis=1)
-                rectangular_part = patches.Polygon(verts)
+                rectangular_part = Polygon(verts)
                 # already in Idl coords
                 radius_arcsec = 2.16
-                circular_part = patches.Circle((0, 0), radius=radius_arcsec)
+                circular_part = Circle((0, 0), radius=radius_arcsec)
                 mask_collection = PatchCollection([rectangular_part, circular_part], alpha=0.5)
                 mask_artists.append(mask_collection)
             elif '1065' in aperture_name or '1140' in aperture_name or '1550' in aperture_name:
@@ -1242,7 +1241,7 @@ class VisibilityCalculator(object):
                 y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
 
                 verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
-                mask_artists.append(patches.Polygon(verts, alpha=0.5))
+                mask_artists.append(Polygon(verts, alpha=0.5))
             else:
                 raise RuntimeError("Invalid mask!")
 
