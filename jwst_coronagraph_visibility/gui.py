@@ -42,7 +42,7 @@ else:
 
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
-import pysiaf
+from pysiaf import Siaf
 from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
 from pprint import pprint
 
@@ -75,8 +75,8 @@ def compute_v2v3_offset(aperture_a, aperture_b):
     x_b, y_b = aperture_b.det_to_tel(aperture_b.XDetRef,  aperture_b.YDetRef)
     return x_a - x_b, y_a - y_b
 
-_NIRCAM_SIAF = pysiaf.Siaf('NIRCam')
-_MIRI_SIAF = pysiaf.Siaf('MIRI')
+_NIRCAM_SIAF = Siaf('NIRCam')
+_MIRI_SIAF = Siaf('MIRI')
 
 _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
     _NIRCAM_SIAF['NRCA5_MASKLWB'],
@@ -199,7 +199,7 @@ def query_simbad(query_string):
 def get_aperture(instrname, apername):
     # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
     # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
-    siaf = pysiaf.Siaf(instrument = instrname)
+    siaf = Siaf(instrument = instrname)
     return siaf[apername]
 
 @contextmanager
