@@ -21,7 +21,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.4.2',
+    version='0.4.3',
 
     description='JWST coronagraphic target observability calculator',
     long_description=long_description,
@@ -63,10 +63,10 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'numpy>=1.9.0',
-        'matplotlib>=2.2.4',
+        'numpy>=1.17.2',
+        'matplotlib>=3.1.1',
         'requests>=2.8.1',
-        'pysiaf>=0.6.3',
+        'pysiaf>=0.7.1',
     ],
 
     # List additional groups of dependencies here (e.g. development
