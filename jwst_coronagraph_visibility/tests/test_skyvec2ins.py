@@ -161,6 +161,11 @@ def _compare_outputs(reference, computed):
     # see https://github.com/mperrin/jwxml/issues/4
 
     assert np.allclose(c1_x, t_c1_x, atol=siaf_transform_epsilon)
+    print(c1_x)
+    print('===========')
+    print(t_c1_x)
+    print('===========')
+    print(c1_x - t_c1_x)
     assert np.allclose(c1_y, t_c1_y, atol=siaf_transform_epsilon)
     assert np.allclose(c2_x, t_c2_x, atol=siaf_transform_epsilon)
     assert np.allclose(c2_y, t_c2_y, atol=siaf_transform_epsilon)
