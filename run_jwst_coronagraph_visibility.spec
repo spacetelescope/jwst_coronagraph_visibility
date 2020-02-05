@@ -41,5 +41,5 @@ app = BUNDLE(coll,
              name='JWST Coronagraph Visibility.app',
              icon='./jwst.icns',
              bundle_identifier='edu.stsci.jwst_coronagraph_visibility',
-             info_plist={'NSHighResolutionCapable': 'True', 'CFBundleShortVersionString':'0.4.3'},
+             info_plist={'NSHighResolutionCapable': 'True', 'CFBundleShortVersionString':'0.4.4'},
              )
