@@ -322,7 +322,7 @@ class VisibilityCalculator(object):
             self.root.destroy()
 
         self.root.protocol("WM_DELETE_WINDOW", close_app)
-        self.start_year = max(datetime.datetime.today().year, 2018)
+        self.start_year = max(datetime.datetime.today().year, 2020)
         self.result = None
         self._build()
 
