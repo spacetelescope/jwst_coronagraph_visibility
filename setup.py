@@ -64,7 +64,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'numpy>=1.17.5',
-        'matplotlib=3.1.3',
+        'matplotlib>=3.1.3',
         'requests>=2.8.1',
         'pysiaf>=0.7.1',
     ],
