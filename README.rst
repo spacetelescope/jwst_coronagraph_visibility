@@ -4,7 +4,7 @@ JWST Coronagraph Visibility Tool
 Current version: 0.4.4 (beta).
 SIAF version: PRDOPSSOC-027
 
-`Download for macOS (90.6 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.4/jwst_coronagraph_visibility_tool_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.4.zip>`_ | ``$ conda install jwst-coronagraph-visibility=0.4.4``
+`Download for macOS (86.4 MB) <https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.4/jwst_coronagraph_visibility_tool_macos.zip>`_ | `Download Python source <https://github.com/spacetelescope/jwst_coronagraph_visibility/archive/0.4.4.zip>`_ | ``$ conda install jwst-coronagraph-visibility=0.4.4``
 
 **Report any issues at https://github.com/spacetelescope/jwst_coronagraph_visibility/issues/new or via email to the authors.**
 
