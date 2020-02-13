@@ -5,17 +5,14 @@ from PyInstaller.utils import hooks
 block_cipher = None
 
 
-hiddenimports = ["tkinter", "tkinter.filedialog"]
-pysiaf_hooks = hooks.collect_data_files('pysiaf')
-
 a = Analysis(['run_jwst_coronagraph_visibility.py'],
              pathex=['.'],
              binaries=None,
-             datas=pysiaf_hooks,
-             hiddenimports=hiddenimports,
+             datas=hooks.collect_data_files('pysiaf'),
+             hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
-             excludes=['PyQt5'],
+             excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
@@ -41,8 +38,8 @@ coll = COLLECT(exe,
                name='run_jwst_coronagraph_visibility')
 
 app = BUNDLE(coll,
-             name='JWST Coronagraph Visibility Tool.app',
+             name='JWST Coronagraph Visibility.app',
              icon='./jwst.icns',
              bundle_identifier='edu.stsci.jwst_coronagraph_visibility',
-             info_plist={'NSHighResolutionCapable': 'True', 'CFBundleShortVersionString':'0.4.2'},
+             info_plist={'NSHighResolutionCapable': 'True', 'CFBundleShortVersionString':'0.4.4'},
              )
