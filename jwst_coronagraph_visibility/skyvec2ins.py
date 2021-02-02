@@ -37,6 +37,7 @@ def _wrap_to_2pi(scalar_or_arr):
     """Offsets angles outside 0 <= x <= 2 * pi to lie within the interval"""
     return np.asarray(scalar_or_arr) % (2 * np.pi)
 
+
 def sun_ecliptic_longitude(start_date):
     """Compute ecliptic longitude of sun on start_date
     using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
@@ -50,6 +51,7 @@ def sun_ecliptic_longitude(start_date):
                   1.915 * np.sin(np.deg2rad(mean_anomaly)) +
                   0.020 * np.sin(2 * np.deg2rad(mean_anomaly)))
     return lambda_sun
+
 
 def ad2lb(alpha_rad, delta_rad):
     """
@@ -499,6 +501,7 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
 
     # END OF DETECTOR POS SECTION
     return c1_x, c1_y
+
 
 def _Tel2Idl(aper, V2, V3):
     """ Convert Tel to Idl

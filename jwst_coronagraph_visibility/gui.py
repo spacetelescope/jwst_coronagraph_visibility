@@ -62,6 +62,7 @@ DEFAULT_NROLLS = 20
 # coordinate conversion gymnastics as there is an optical wedge in the pupil
 # wheel that changes the angular to pixel transformation
 
+
 def compute_v2v3_offset(aperture_a, aperture_b):
     '''
     For the same pixel coordinates, different V2, V3 coordinates are used
@@ -70,9 +71,10 @@ def compute_v2v3_offset(aperture_a, aperture_b):
     to V2, V3 in two different apertures and computing the difference in
     the resulting Tel frame coordinates
     '''
-    x_a, y_a  = aperture_a.det_to_tel(aperture_b.XDetRef,  aperture_b.YDetRef)
-    x_b, y_b = aperture_b.det_to_tel(aperture_b.XDetRef,  aperture_b.YDetRef)
+    x_a, y_a = aperture_a.det_to_tel(aperture_b.XDetRef, aperture_b.YDetRef)
+    x_b, y_b = aperture_b.det_to_tel(aperture_b.XDetRef, aperture_b.YDetRef)
     return x_a - x_b, y_a - y_b
+
 
 _NIRCAM_SIAF = Siaf('NIRCam')
 _MIRI_SIAF = Siaf('MIRI')
@@ -88,7 +90,7 @@ _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
 # V2, V3 for A5
 
 NIRCAM_CORON_BAD_AREAS = np.array(
-       [[[  56.525 , -462.2092],
+       [[[ 56.525, -462.2092],
         [  56.5505, -456.9293],
         [  61.8066, -456.9541],
         [  61.7856, -462.2317]],
@@ -116,14 +118,14 @@ NIRCAM_CORON_BAD_AREAS = np.array(
        [[ 134.8664, -462.0006],
         [ 134.8259, -456.7415],
         [ 140.0682, -456.6904],
-        [ 140.113 , -461.949 ]],
+        [ 140.113, -461.949]],
 
        [[  38.9735, -444.1376],
         [  38.9862, -442.5039],
         [  41.2405, -442.5257],
-        [  41.2284, -444.159 ]],
+        [  41.2284, -444.159]],
 
-       [[  58.114 , -444.162 ],
+       [[  58.114, -444.162],
         [  58.1216, -442.6566],
         [  60.3693, -442.6698],
         [  60.3623, -444.1749]],
@@ -139,7 +141,7 @@ NIRCAM_CORON_BAD_AREAS = np.array(
         [ 100.6248, -443.9892]],
 
        [[ 118.4879, -443.9169],
-        [ 118.483 , -442.6667],
+        [ 118.483, -442.6667],
         [ 120.7234, -442.6532],
         [ 120.7286, -443.9034]],
 
@@ -148,31 +150,32 @@ NIRCAM_CORON_BAD_AREAS = np.array(
         [ 139.7735, -442.4982],
         [ 139.7839, -443.9979]],
 
-       [[  21.83  , -463.4815],
+       [[  21.83, -463.4815],
         [  22.1856, -428.4652],
-        [  38.844 , -428.6853],
+        [  38.844, -428.6853],
         [  38.5725, -463.6381]],
 
        [[ 140.7495, -463.2577],
         [ 140.4967, -428.7508],
         [ 149.7032, -428.6478],
-        [ 150.0012, -463.153 ]],
+        [ 150.0012, -463.153]],
 
        [[  38.8609, -442.5026],
         [  38.9691, -428.6867],
         [ 140.4967, -428.7508],
-        [ 140.5833, -442.49  ]],
+        [ 140.5833, -442.49]],
 
        [[  38.1157, -465.8399],
-        [  38.136 , -463.1937],
+        [  38.136, -463.1937],
         [ 141.1852, -463.0652],
         [ 141.2094, -465.6963]]])
-NIRCAM_CORON_BAD_AREAS[:,:,0] += _NIRCAM_CORON_OFFSET_TEL[0]
-NIRCAM_CORON_BAD_AREAS[:,:,1] += _NIRCAM_CORON_OFFSET_TEL[1]
+NIRCAM_CORON_BAD_AREAS[:, :, 0] += _NIRCAM_CORON_OFFSET_TEL[0]
+NIRCAM_CORON_BAD_AREAS[:, :, 1] += _NIRCAM_CORON_OFFSET_TEL[1]
 NIRCAM_CORON_BAD_AREAS.flags.writeable = False
 
+
 def query_simbad(query_string):
-    #response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+    # response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     try:
         response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     except (requests.exceptions.ConnectionError):
@@ -195,11 +198,13 @@ def query_simbad(query_string):
     else:
         return SimbadResult(ra=ra, dec=dec, id=canonical_id)
 
+
 def get_aperture(instrname, apername):
     # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
     # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
-    siaf = Siaf(instrument = instrname)
+    siaf = Siaf(instrument=instrname)
     return siaf[apername]
+
 
 @contextmanager
 def _busy_cursor(root):
@@ -211,6 +216,7 @@ def _busy_cursor(root):
     yield
     root.config(cursor='')
     root.update()
+
 
 class VisibilityCalculation(object):
     def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
@@ -278,6 +284,7 @@ class VisibilityCalculation(object):
         self.n_y[mask] = np.nan
         self.e_x[mask] = np.nan
         self.e_y[mask] = np.nan
+
 
 class VisibilityCalculator(object):
     NIRCAM_A = 'NIRCam Channel A'
@@ -360,8 +367,8 @@ class VisibilityCalculator(object):
         self.style = ttk.Style()
         self.style.map(
             'TEntry',
-            background=[('disabled','#d9d9d9'),],
-            foreground=[('disabled','#a3a3a3')]
+            background=[('disabled', '#d9d9d9'), ],
+            foreground=[('disabled', '#a3a3a3')]
         )
         self.root.minsize(width=1366, height=680)
 
@@ -463,15 +470,15 @@ class VisibilityCalculator(object):
         menu.add_command(label="North Ecliptic Pole, NIRCam long wavelength bar", command=self._ex_north_ecliptic)
 
     def _ex_single_companion(self):
-        ra=344.41269
-        dec=-29.62224
-        pa1=325
-        pa2=0
-        pa3=0
-        separation_as1=10
-        separation_as2=0
-        separation_as3=0
-        apername='NRCA2_MASK210R'
+        ra = 344.41269
+        dec = -29.62224
+        pa1 = 325
+        pa2 = 0
+        pa3 = 0
+        separation_as1 = 10
+        separation_as2 = 0
+        separation_as3 = 0
+        apername = 'NRCA2_MASK210R'
 
         self.ra_value.set(ra)
         self.dec_value.set(dec)
@@ -494,15 +501,15 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _ex_three_companions(self):
-        ra=346.86965
-        dec=21.13425
-        pa1=45
-        pa2=325
-        pa3=190
-        separation_as1=1.7
-        separation_as2=1
-        separation_as3=0.65
-        apername='MIRIM_CORON1065'
+        ra = 346.86965
+        dec = 21.13425
+        pa1 = 45
+        pa2 = 325
+        pa3 = 190
+        separation_as1 = 1.7
+        separation_as2 = 1
+        separation_as3 = 0.65
+        apername = 'MIRIM_CORON1065'
 
         self.ra_value.set(ra)
         self.dec_value.set(dec)
@@ -526,15 +533,15 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _ex_north_ecliptic(self):
-        ra=270.0
-        dec=66.5
-        pa1=0
-        pa2=120
-        pa3=270
-        separation_as1=3
-        separation_as2=5
-        separation_as3=10
-        apername='NRCA5_MASKLWB'
+        ra = 270.0
+        dec = 66.5
+        pa1 = 0
+        pa2 = 120
+        pa3 = 270
+        separation_as1 = 3
+        separation_as2 = 5
+        separation_as3 = 10
+        apername = 'NRCA5_MASKLWB'
 
         self.ra_value.set(ra)
         self.dec_value.set(dec)
@@ -618,7 +625,7 @@ class VisibilityCalculator(object):
 
         def _update_ecliptic(*_):
             try:
-                 ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
+                ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
             except ValueError:
                 self.ecliptic_value.set('')
                 return
@@ -648,6 +655,7 @@ class VisibilityCalculator(object):
             # variables
             visible = BooleanVar(value=False)
             # ensure widgets are updated when `visible` changes:
+
             def _update_companions(*args):
                 self.update_companions()
             visible.trace('w', _update_companions)
@@ -750,7 +758,6 @@ class VisibilityCalculator(object):
         self.companion_legend_labels = []
         self.companion_info = []
 
-
         v_pos = 0.2
         line_height = 0.04
         for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
@@ -800,7 +807,6 @@ class VisibilityCalculator(object):
             self.ra_value.set(str(result.ra))
             self.dec_value.set(str(result.dec))
             self.simbad_id.set(result.id)
-
 
     def update_companions(self):
         # handle disabling / enabling entries
@@ -948,7 +954,7 @@ class VisibilityCalculator(object):
 
         mask = observable != 0
         # there might be a better way to get a 'days' the right shape
-        days_for_all_rolls = np.repeat(days[np.newaxis,:], self.result.nrolls, axis=0)
+        days_for_all_rolls = np.repeat(days[np.newaxis, :], self.result.nrolls, axis=0)
         days_for_all_rolls[self.result.observable == 0] = np.nan
         theta[self.result.observable == 0] = np.nan
         # TODO there should be a more elegant way to hold on to the actual plotted arrays
@@ -1080,8 +1086,8 @@ class VisibilityCalculator(object):
         self._mask_artists = []
         ax.set_aspect('equal')
 
-        aper_corners_x, aper_corners_y = aperture.corners(to_frame = 'idl')
-        verts = np.concatenate([aper_corners_x[:,np.newaxis], aper_corners_y[:,np.newaxis]], axis=1)
+        aper_corners_x, aper_corners_y = aperture.corners(to_frame='idl')
+        verts = np.concatenate([aper_corners_x[:, np.newaxis], aper_corners_y[:, np.newaxis]], axis=1)
         patch = Polygon(verts, facecolor='none', edgecolor='red', alpha=0.5, linestyle='--', linewidth=3)
         ax.add_artist(patch)
 
@@ -1096,8 +1102,6 @@ class VisibilityCalculator(object):
         ax.set_xlabel('x (arcsec, ideal frame)')
         ax.set_ylabel('y (arcsec, ideal frame)')
 
-
-
     def _overlay_mask(self):
         while self._mask_artists:
             artist = self._mask_artists.pop()
@@ -1111,7 +1115,7 @@ class VisibilityCalculator(object):
 
         def _overlay_miri_ta_positions():
             '''MIRI has eight target acq locations for each coronagraph which could result in persistence'''
-            ta_loc_spot_radius = 0.2 # arcsec
+            ta_loc_spot_radius = 0.2  # arcsec
             mask_name = re.match(r'MIRIM_CORON(\d+|LYOT)', aperture.AperName).groups()[0]
             ta_apers = [
                 'MIRIM_TA{}_LL', 'MIRIM_TA{}_CLL',
@@ -1141,9 +1145,9 @@ class VisibilityCalculator(object):
 
         if 'NRC' in aperture_name:
             for quad_verts in NIRCAM_CORON_BAD_AREAS:
-                v2, v3 = quad_verts[:,0], quad_verts[:,1]
+                v2, v3 = quad_verts[:, 0], quad_verts[:, 1]
                 xidl, yidl = aperture.tel_to_idl(v2, v3)
-                idl_verts = np.concatenate([xidl[:,np.newaxis], yidl[:,np.newaxis]], axis=1)
+                idl_verts = np.concatenate([xidl[:, np.newaxis], yidl[:, np.newaxis]], axis=1)
                 patch = Polygon(idl_verts, facecolor='red', edgecolor='none', alpha=0.5)
                 mask_artists.append(patch)
             if aperture_name[-1] == 'R':
@@ -1176,7 +1180,7 @@ class VisibilityCalculator(object):
                     -thin_extent_arcsec / arcsec_per_pixel
                 ])
                 x_idl_verts, y_idl_verts = aperture.sci_to_idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
-                verts = np.concatenate([x_idl_verts[:,np.newaxis], y_idl_verts[:,np.newaxis]], axis=1)
+                verts = np.concatenate([x_idl_verts[:, np.newaxis], y_idl_verts[:, np.newaxis]], axis=1)
                 patch = Polygon(verts, alpha=0.5)
                 mask_artists.append(patch)
                 # self._mask_artists = self.detector_ax.add_artist(patch)
@@ -1198,7 +1202,7 @@ class VisibilityCalculator(object):
                 x_verts = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
                 y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
 
-                verts = np.concatenate([x_verts[:,np.newaxis], y_verts[:,np.newaxis]], axis=1)
+                verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
                 rectangular_part = Polygon(verts)
                 # already in Idl coords
                 radius_arcsec = 2.16
