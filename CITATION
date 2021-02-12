@@ -1,0 +1,23 @@
+If you use jwst_coronagraph_visibility for work/research presented in a publication (whether
+directly, or as a dependency to another package), we recommend and encourage
+the following acknowledgment:
+
+  This research made use of the open source Python package jwst_coronagraph_visibility, 
+  the JWST Coronagraph Visibility tool (Stark et al. 2021)
+    
+The recommended BibTeX entry for the above citation is:
+
+@software{chris_stark_2021_4488421,
+  author       = {Chris Stark and
+                  Joseph Long and
+                  Brendan Hagan and
+                  Mees Fix and
+                  Bryony Nickson},
+  title        = {spacetelescope/jwst_coronagraph_visibility: Tier 2 JWST Community Software Standards},
+  month        = feb,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {0.4.4},
+  doi          = {10.5281/zenodo.4488421},
+  url          = {https://doi.org/10.5281/zenodo.4488421}
+}
