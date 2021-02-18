@@ -65,7 +65,7 @@ may be installed from the [Python Package Index](https://pypi.org/) in the usual
 
 ### Installing the macOS application
 
-If you are running macOS and would like a double-clickable application, click on the following link: **[Download for macOS (86.4 MB)](https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.4/jwst_coronagraph_visibility_tool_macos.zip)**. 
+If you are running macOS and would like a double-clickable application, click on the following link:<br> **[Download for macOS (86.4 MB)](https://github.com/spacetelescope/jwst_coronagraph_visibility/releases/download/0.4.4/jwst_coronagraph_visibility_tool_macos.zip)**. 
 
 Simply extract the downloaded zip file to obtain the .app bundle, then double-click to run the JWST Coronagraph Visibility Tool.
 
@@ -76,7 +76,7 @@ installing the repository. This is only recommended for those looking to help wi
 wishing only to use the jwst_coronagraph_visibility tool should install the latest stable version from using Astroconda, 
 as described in the [instructions above](#user-install).
 
-### Prerequisites
+### Prerequisites 
 
 It is highly recommended that contributors have a working installation of [Miniconda](https://conda.io/miniconda.html) 
 or [Anaconda](Anaconda) for Python 3.6. Package requirements for contributing to `jwst_coronagraph_visibility` will be 
@@ -122,7 +122,7 @@ when making contributions to the project.
 ## Code of Conduct 
 
 Users and contributors to the `jwst_coronagraph_visibility` repository should adhere to the 
-[Code of Conduct](CODE_OF_CONDUCT.MD). Any issues or violations pertaining to the Code of Conduct should be brought to 
+[Code of Conduct](CODE_OF_CONDUCT). Any issues or violations pertaining to the Code of Conduct should be brought to 
 the attention of a `jwst_coronagraph_visibility` team member or to `conduct@stsci.edu`.
 
 ## Questions
