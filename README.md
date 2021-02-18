@@ -140,8 +140,8 @@ For any questions about the `jwst_coronagraph_visibility` project or its softwar
 *See issue tracker at* https://github.com/spacetelescope/jwst_coronagraph_visibility/issues.
 
 ## Current Development Team
-- Mees Fix [@brynickson](https://github.com/brynickson)
-- Bryony Nickson [@mfixstsci](https://github.com/mfixstsci)
+- Mees Fix [@mfixstsci](https://github.com/mfixstsci)
+- Bryony Nickson [@brynickson](https://github.com/brynickson)
 <br>
 
 ##  Acronyms 
