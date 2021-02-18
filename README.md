@@ -116,8 +116,6 @@ package), please consider citing the Zenodo record using the DOI page above. Ple
 
 ## Software Contributions
 
-Prior to contributing to the `jwst_coronagraph_visibility`  development, please review our [release procedures](RELEASES.md).
-
 Contibutors should use a ["forking workflow"](https://github.com/spacetelescope/style-guides/blob/master/guides/git-workflow.md#the-forking-workflow-) 
 when making contributions to the project.
 
