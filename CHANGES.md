@@ -9,6 +9,7 @@
  - Registered the project with [Zenodo](10.5281/zenodo.4488420).
  - Updated to follow PEP8 Coding Standards.
  - General code clean-up.
+ - Added the use of an automated dependency update tool (`pyup`) 
 
 #### Project & API Documentation
 
