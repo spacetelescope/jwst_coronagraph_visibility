@@ -4,14 +4,20 @@
 
 ### New Features 
 
+#### Repository
+
+ - Registered the project with [Zenodo](10.5281/zenodo.4488420).
+ - Updated to follow PEP8 Coding Standards.
+ - General code clean-up.
+
 #### Project & API Documentation
 
- - Added project citation information to `README` and `CITATION`, along with a Zenodo badge.
+ - Added project citation information to [`README`](README) and [`CITATION`](CITATION), along with a Zenodo badge.
  - Updated `README` to include: links to JDOX documentation; installation instructions for both general users and 
  contributors; link to `CODE_OF_CONDUCT`; contact information for current developers and provided link to the appropriate
  git workflow.
- - Added release notes (`CHANGES`)
- - Added a documented release procedure (`RELEASES`) 
+ - Added release notes ([`CHANGES`](CHANGES)).
+ - Added a documented release procedure ([`RELEASES`](RELEASES)).
  
 ## 0.4.4 (2020-02-13)
 
@@ -19,14 +25,14 @@
 
 #### Repository
 
-- Updated to use `pysiaf` version `0.7.1` which uses **PRD PRDOPSSOC-027**
-- Updated unit tests to reflect changes from latest SIAF in **PRDOPSSOC-027**
+- Updated to use `pysiaf` version `0.7.1` which uses **PRD PRDOPSSOC-027**.
+- Updated unit tests to reflect changes from latest SIAF in **PRDOPSSOC-027**.
 
 ### Bug Fixes
 
 #### Mac OS app bundle
 
- - Fixed Mac bundle issue that was causing application not to open
+ - Fixed Mac bundle issue that was causing application not to open.
 
 
 ## 0.4.2 (2020-01-16)
@@ -60,8 +66,8 @@
  
 #### Repository
 
- - Fixed bug in GUI so that NIRCam A long-wavelength bar mask is now oriented correctly in GUI (previously flipped left-to-right)
- - Fixed bug in GUI such that The SIMBAD search field is now cleared when user enters RA/Dec or chooses an example
+ - Fixed bug in GUI so that NIRCam A long-wavelength bar mask is now oriented correctly in GUI (previously flipped left-to-right).
+ - Fixed bug in GUI such that The SIMBAD search field is now cleared when user enters RA/Dec or chooses an example.
  
 
 ## 0.2.0 (2017-03-12)
@@ -74,17 +80,17 @@
  
 #### Repository 
 
- - Incorporated revised definitions of the science instrument apertures in the SIAF (version **PRDOPSSOC-F-008**)
- - Added MIRI target acquisition locations on the detector plot 
- - Updated the MIRI TA spots to be translucent and renamed by APT numbers
- - Added a 'zoom to fit' button to the GUI
- - Added day of year to plot overlay in GUI
+ - Incorporated revised definitions of the science instrument apertures in the SIAF (version **PRDOPSSOC-F-008**).
+ - Added MIRI target acquisition locations on the detector plot. 
+ - Updated the MIRI TA spots to be translucent and renamed by APT numbers.
+ - Added a 'zoom to fit' button to the GUI.
+ - Added day of year to plot overlay in GUI.
  
  ### Bug Fixes
  
 #### Repository 
 
- - Changed visibility calculation plot such that it now starts on Jan 1 instead of Oct 1 
+ - Changed visibility calculation plot such that it now starts on Jan 1 instead of Oct 1. 
  
 ## 0.1.0 (2017-01-17)
  
@@ -96,9 +102,9 @@
 
 #### Repository
 
- - Renamed tool to `jwst_coronagraph_visibility` with the command to launch the GUI taking on the name `jwst-coronagraph-visibility-gui`
- - Updated `jwxml` to **PRDOPSSOC-E-002** (version `0.2.0`), which is required for new aperture names used by this tool
- - Added NIRCam coronagraph ND squares and clips in the right hand (detector) plot in GUI
+ - Renamed tool to `jwst_coronagraph_visibility` with the command to launch the GUI taking on the name `jwst-coronagraph-visibility-gui`.
+ - Updated `jwxml` to **PRDOPSSOC-E-002** (version `0.2.0`), which is required for new aperture names used by this tool.
+ - Added NIRCam coronagraph ND squares and clips in the right hand (detector) plot in GUI.
 
 
 ## 0.0.2 (2016-11-03)
@@ -108,13 +114,13 @@
 #### Repository 
 
 - SIAF is now bundled with the `jwxml` package, and targets **PRDDEVSOC-D-012**. This includes minor refinements to the transformations from sky coordinates to the coronagraph aperture coordinates.
- - Added controls for the sampling of the roll angle and time of year to the GUI
+ - Added controls for the sampling of the roll angle and time of year to the GUI.
 
 ### Bug Fixes
 
 #### Repository
 
-- Removed NIRCam Module B is as a selectable instrument
+- Removed NIRCam Module B is as a selectable instrument.
 
 ## 0.0.1 (2016-08-01)
 
