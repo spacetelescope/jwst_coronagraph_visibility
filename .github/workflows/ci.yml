@@ -16,29 +16,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
 
-      - name: Install Dependencies and Run CVT
-        shell: bash -l {0}
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-          echo "Setting useful environment variables:"
-          echo " "
-          export PYTHONVERSION=${{ matrix.python-version }}
-          echo "PYTHONVERSION: $PYTHONVERSION"
-
-          echo " "
-          echo "Installing jwst-cvt conda environment"
-          echo " "
-          cd $RUNNER_WORKSPACE/
-          cd jwst_coronagraph_visibility/
-          pip install -r requirements.txt
-
-          echo " "
-          echo "Installing jwst-cvt package"
-          echo " "
-          python setup.py develop
-
-          echo " "
-          echo "Running pytests"
-          echo " "
-          pytest -q -s jwst_coronagraph_visibility/tests/
+      - name: Test with pytest
+        run: |
+          pytest
