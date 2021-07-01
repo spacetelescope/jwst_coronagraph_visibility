@@ -1,0 +1,44 @@
+name: JWST CVT CI
+
+on: [push, pull_request]
+
+jobs:
+
+  JWST-CVT-CI:
+
+    name: Python - ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 5
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies and Run CVT
+        shell: bash -l {0}
+        run: |
+
+          echo "Setting useful environment variables:"
+          echo " "
+          export PYTHONVERSION=${{ matrix.python-version }}
+          echo "PYTHONVERSION: $PYTHONVERSION"
+
+          echo " "
+          echo "Installing jwst-cvt conda environment"
+          echo " "
+          cd $RUNNER_WORKSPACE/
+          cd jwst_coronagraph_visibility/
+          pip install -r requirements.txt
+
+          echo " "
+          echo "Installing jwst-cvt package"
+          echo " "
+          python setup.py develop
+
+          echo " "
+          echo "Running pytests"
+          echo " "
+          pytest -q -s jwst_coronagraph_visibility/tests/
