@@ -6,7 +6,7 @@ jobs:
 
   JWST-CVT-CI:
 
-    name: Python - ${{ matrix.python-version }}
+    name: Python - ${{ matrix.python-version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 5
