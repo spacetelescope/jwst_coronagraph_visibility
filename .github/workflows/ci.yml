@@ -19,12 +19,11 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       - name: Test with pytest
         run: |
-          pytest -q -s
+          export PYTHONVERSION=${{ matrix.python-version }}
+          export OS=${{ matrix.os }}
+          cd $RUNNER_WORKSPACE/
+          cd jwst_coronagraph_visibility/
+          python setup.py develop
+          pytest jwst_coronagraph_visibility/tests/
