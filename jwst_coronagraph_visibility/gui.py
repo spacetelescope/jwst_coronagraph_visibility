@@ -16,8 +16,8 @@ try:
 except ImportError:
     from urllib.parse import quote
 
-import matplotlib
-matplotlib.use('TkAgg')
+# import matplotlib
+# matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
