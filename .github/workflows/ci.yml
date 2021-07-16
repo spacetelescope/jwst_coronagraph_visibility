@@ -18,6 +18,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install pip/pytest
         run: |
@@ -26,9 +28,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          export PYTHONVERSION=${{ matrix.python-version }}
-          export PYTHONVERSION=${{ matrix.os }}
-          cd $RUNNER_WORKSPACE/
-          cd jwst_coronagraph_visibility/
-          python setup.py develop
-          pytest jwst_coronagraph_visibility/tests/
+          pytest
