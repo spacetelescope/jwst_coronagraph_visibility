@@ -1,22 +1,24 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf8 :
 from __future__ import print_function, division
-import sys
-from tkinter import *
-from tkinter import ttk
-import os
-import os.path
+
 import datetime
-import re
+import os.path
 from collections import namedtuple
 from contextlib import contextmanager
+from tkinter import *
+from tkinter import ttk
 
 try:
     from urllib import quote
 except ImportError:
     from urllib.parse import quote
 
+import matplotlib
+
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
+
 plt.style.use('ggplot')
 
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
@@ -30,6 +32,7 @@ from matplotlib.text import Annotation, Text
 import numpy as np
 import requests
 import requests.exceptions
+
 if getattr(sys, 'frozen', False):
     # we are running in a bundle
     bundle_dir = sys._MEIPASS
@@ -40,8 +43,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from pysiaf import Siaf
-from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
-from pprint import pprint
+from .skyvec2ins import skyvec2ins, ad2lb
 
 RED_GGPLOT = '#E24A33'
 BLUE_GGPLOT = '#348ABD'
@@ -56,19 +58,29 @@ QUERY_TIMEOUT_SEC = 1.0
 DEFAULT_NPOINTS = 360
 DEFAULT_NROLLS = 20
 
+
 # Outlining the 'bad' areas of the NIRCam Module A coronagraphs requires some
 # coordinate conversion gymnastics as there is an optical wedge in the pupil
 # wheel that changes the angular to pixel transformation
 
 
 def compute_v2v3_offset(aperture_a, aperture_b):
-    '''
-    For the same pixel coordinates, different V2, V3 coordinates are used
-    depending on whether the coronagraph pupil wheel wedge is in the beam.
-    The offset is computed by transforming the same pixel (Det) coordinates
-    to V2, V3 in two different apertures and computing the difference in
-    the resulting Tel frame coordinates
-    '''
+    """Compute the V2, V3 offset between two apertures. For the same pixel coordinates, different V2, V3 coordinates
+    are used depending on whether the coronagraph pupil wheel wedge is in the beam. The offset is computed by
+    transforming the same pixel (Det) coordinates to V2, V3 in two different apertures and computing the difference in
+    the resulting telescope (Tel) frame coordinates.
+
+    Parameters
+    ----------
+    aperture_a : pysiaf.Aperture
+        SIAF aperture object.
+    aperture_b : pysiaf.Aperture
+        SIAF aperture object.
+
+    Returns
+    -------
+        V2, V3 offset between apertures.
+    """
     x_a, y_a = aperture_a.det_to_tel(aperture_b.XDetRef, aperture_b.YDetRef)
     x_b, y_b = aperture_b.det_to_tel(aperture_b.XDetRef, aperture_b.YDetRef)
     return x_a - x_b, y_a - y_b
@@ -88,94 +100,106 @@ _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
 # V2, V3 for A5
 
 NIRCAM_CORON_BAD_AREAS = np.array(
-       [[[ 56.525, -462.2092],
-        [  56.5505, -456.9293],
-        [  61.8066, -456.9541],
-        [  61.7856, -462.2317]],
+    [[[56.525, -462.2092],
+      [56.5505, -456.9293],
+      [61.8066, -456.9541],
+      [61.7856, -462.2317]],
 
-       [[  38.8981, -462.1289],
-        [  38.9384, -456.8408],
-        [  44.2083, -456.8827],
-        [  44.1725, -462.1682]],
+     [[38.8981, -462.1289],
+      [38.9384, -456.8408],
+      [44.2083, -456.8827],
+      [44.1725, -462.1682]],
 
-       [[  96.9128, -462.0046],
-        [  96.9041, -456.7388],
-        [ 102.1434, -456.7248],
-        [ 102.1565, -461.9892]],
+     [[96.9128, -462.0046],
+      [96.9041, -456.7388],
+      [102.1434, -456.7248],
+      [102.1565, -461.9892]],
 
-       [[ 117.1985, -461.9805],
-        [ 117.1727, -456.7191],
-        [ 122.4112, -456.6854],
-        [ 122.4413, -461.9459]],
+     [[117.1985, -461.9805],
+      [117.1727, -456.7191],
+      [122.4112, -456.6854],
+      [122.4413, -461.9459]],
 
-       [[  76.8615, -462.1433],
-        [  76.8697, -456.8714],
-        [  82.1149, -456.8766],
-        [  82.1112, -462.1468]],
+     [[76.8615, -462.1433],
+      [76.8697, -456.8714],
+      [82.1149, -456.8766],
+      [82.1112, -462.1468]],
 
-       [[ 134.8664, -462.0006],
-        [ 134.8259, -456.7415],
-        [ 140.0682, -456.6904],
-        [ 140.113, -461.949]],
+     [[134.8664, -462.0006],
+      [134.8259, -456.7415],
+      [140.0682, -456.6904],
+      [140.113, -461.949]],
 
-       [[  38.9735, -444.1376],
-        [  38.9862, -442.5039],
-        [  41.2405, -442.5257],
-        [  41.2284, -444.159]],
+     [[38.9735, -444.1376],
+      [38.9862, -442.5039],
+      [41.2405, -442.5257],
+      [41.2284, -444.159]],
 
-       [[  58.114, -444.162],
-        [  58.1216, -442.6566],
-        [  60.3693, -442.6698],
-        [  60.3623, -444.1749]],
+     [[58.114, -444.162],
+      [58.1216, -442.6566],
+      [60.3693, -442.6698],
+      [60.3623, -444.1749]],
 
-       [[  78.2656, -444.1798],
-        [  78.2685, -442.7392],
-        [  80.5116, -442.7435],
-        [  80.5091, -444.1839]],
+     [[78.2656, -444.1798],
+      [78.2685, -442.7392],
+      [80.5116, -442.7435],
+      [80.5091, -444.1839]],
 
-       [[  98.3837, -443.9939],
-        [  98.3826, -442.7426],
-        [ 100.6232, -442.7381],
-        [ 100.6248, -443.9892]],
+     [[98.3837, -443.9939],
+      [98.3826, -442.7426],
+      [100.6232, -442.7381],
+      [100.6248, -443.9892]],
 
-       [[ 118.4879, -443.9169],
-        [ 118.483, -442.6667],
-        [ 120.7234, -442.6532],
-        [ 120.7286, -443.9034]],
+     [[118.4879, -443.9169],
+      [118.483, -442.6667],
+      [120.7234, -442.6532],
+      [120.7286, -443.9034]],
 
-       [[ 137.5412, -444.0201],
-        [ 137.5313, -442.5203],
-        [ 139.7735, -442.4982],
-        [ 139.7839, -443.9979]],
+     [[137.5412, -444.0201],
+      [137.5313, -442.5203],
+      [139.7735, -442.4982],
+      [139.7839, -443.9979]],
 
-       [[  21.83, -463.4815],
-        [  22.1856, -428.4652],
-        [  38.844, -428.6853],
-        [  38.5725, -463.6381]],
+     [[21.83, -463.4815],
+      [22.1856, -428.4652],
+      [38.844, -428.6853],
+      [38.5725, -463.6381]],
 
-       [[ 140.7495, -463.2577],
-        [ 140.4967, -428.7508],
-        [ 149.7032, -428.6478],
-        [ 150.0012, -463.153]],
+     [[140.7495, -463.2577],
+      [140.4967, -428.7508],
+      [149.7032, -428.6478],
+      [150.0012, -463.153]],
 
-       [[  38.8609, -442.5026],
-        [  38.9691, -428.6867],
-        [ 140.4967, -428.7508],
-        [ 140.5833, -442.49]],
+     [[38.8609, -442.5026],
+      [38.9691, -428.6867],
+      [140.4967, -428.7508],
+      [140.5833, -442.49]],
 
-       [[  38.1157, -465.8399],
-        [  38.136, -463.1937],
-        [ 141.1852, -463.0652],
-        [ 141.2094, -465.6963]]])
+     [[38.1157, -465.8399],
+      [38.136, -463.1937],
+      [141.1852, -463.0652],
+      [141.2094, -465.6963]]])
 NIRCAM_CORON_BAD_AREAS[:, :, 0] += _NIRCAM_CORON_OFFSET_TEL[0]
 NIRCAM_CORON_BAD_AREAS[:, :, 1] += _NIRCAM_CORON_OFFSET_TEL[1]
 NIRCAM_CORON_BAD_AREAS.flags.writeable = False
 
 
 def query_simbad(query_string):
+    """Resolve target's celestial coordinates using SIMBAD.
+
+    Parameters
+    ----------
+    query_string: string
+        Object identifier (astronomical designation).
+
+    Returns
+    -------
+        Tuple containing target's celestial coordinates and ID.
+    """
     # response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     try:
-        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string),
+                                timeout=QUERY_TIMEOUT_SEC)
     except (requests.exceptions.ConnectionError):
         return None
     body = response.text
@@ -198,6 +222,19 @@ def query_simbad(query_string):
 
 
 def get_aperture(instrname, apername):
+    """Get pysiaf Aperture object from instrument SIAF.
+
+    Parameters 
+    ----------
+    instrname : str
+        Name of instrument; one of 'NIRCam', 'NIRSpec', 'NIRISS', 'MIRI', 'FGS' (case-insensitive).
+    apername : str
+        Name of instrument aperture.
+
+    Returns
+    -------
+        pysiaf.Aperture object.
+    """
     # siaf_path = os.path.join(bundle_dir, 'data', '{}_SIAF.xml'.format(instrname))
     # assert os.path.exists(siaf_path), 'no SIAF for {} at {}'.format(instrname, siaf_path)
     siaf = Siaf(instrument=instrname)
@@ -206,6 +243,13 @@ def get_aperture(instrname, apername):
 
 @contextmanager
 def _busy_cursor(root):
+    """Display a busy mouse cursor during long operations.
+
+    Parameters
+    ----------
+    root: tk.Tk object
+        Root window of application.
+    """
     try:
         root.config(cursor='wait')
     except TclError:
@@ -218,6 +262,25 @@ def _busy_cursor(root):
 
 class VisibilityCalculation(object):
     def __init__(self, ra, dec, companions, aperture, start_date, npoints, nrolls):
+        """Class for the target visibility calculation.
+
+        Parameters
+        ----------
+        ra : float
+            Right ascension of target in decimal degrees (0-360).
+        dec : float
+            Declination of target in decimal degrees (-90, 90).
+        companions : list
+            list of companions' position angle (degrees east of north) and separation (arcseconds).
+        aperture :  
+            Aperture as loaded from the instrument SIAF.
+        start_date : datetime
+            Start date of visibility calculqtion.
+        npoints : int
+            Number of points to sample in the year-long interval to find observable dates (default: 360).
+        nrolls : int
+            Number of roll angles in the allowed roll angle range to sample at each date (default: 15).
+        """
         self.ra = ra
         self.dec = dec
         self.companions = companions
@@ -243,6 +306,7 @@ class VisibilityCalculation(object):
         self.e_y = None
 
     def calculate(self):
+        """Calculate visibility and mask the non-observable (roll, elongation) pairs from output data."""
         (
             self.days,
             self.observable,
@@ -285,6 +349,8 @@ class VisibilityCalculation(object):
 
 
 class VisibilityCalculator(object):
+    """Class for the Target Visibility Calculator."""
+
     NIRCAM_A = 'NIRCam Channel A'
     NIRCAM_B = 'NIRCam Channel B'
     MIRI = 'MIRI'
@@ -332,12 +398,22 @@ class VisibilityCalculator(object):
         self._build()
 
     def start(self):
+        """Start the application."""
         self.root.lift()
         self.root.call('wm', 'attributes', '.', '-topmost', True)
         self.root.after_idle(self.root.call, 'wm', 'attributes', '.', '-topmost', False)
         self.root.mainloop()
 
     def error_modal(self, message, title="Error"):
+        """Generate a modal dialog box.
+
+        Parameters
+        ----------
+        message: str
+            Label for the dialog box.
+        title: str
+            Title for the dialog box; default is "Error".
+        """
         modal = Toplevel()
         modal.geometry('+400+400')
         modal.title(title)
@@ -353,6 +429,7 @@ class VisibilityCalculator(object):
         self.root.wait_window(modal)
 
     def show_about(self):
+        """Generate an 'About' modal box."""
         self.error_modal(
             "The JWST Coronagraph Visibility tool provides approximate\n"
             "pointing restriction information for planning coronagraphic observations.\n\n"
@@ -361,6 +438,7 @@ class VisibilityCalculator(object):
         )
 
     def _build(self):
+        """Build the GUI."""
         # improve visual feedback for entries in 'disabled' state
         self.style = ttk.Style()
         self.style.map(
@@ -407,6 +485,14 @@ class VisibilityCalculator(object):
         self.main.rowconfigure(0, weight=1)
 
     def _build_controls(self, frame):
+        """Build the controls panel, containing a SIMBAD Target Resolver frame; input boxes for RA and
+        declination coordinates; a Companions frame; an Instrument/Mask Selector frame; and an Update Plot button.
+
+        Parameters
+        ----------
+        frame : ttk.Frame
+            Frame to contain the controls panel.
+        """
         # SIMBAD + RA/Dec
         simbad_frame = ttk.LabelFrame(frame, text="Target Location")
         self._build_simbad_lookup(simbad_frame)
@@ -462,12 +548,22 @@ class VisibilityCalculator(object):
         frame.columnconfigure(0, weight=1)
 
     def _build_examples_menu(self, menu):
+        """Build an examples menu containing three example calculation options. The examples menu is included to
+        provide testing and demonstration capabilities.
+
+        Parameters
+        ----------
+        menu : tkinter.Menu
+            Menu widget in which the examples menu is to be built.
+        """
         menu.add_command(label="Single companion, NIRCam 210R spot",
                          command=self._ex_single_companion)
         menu.add_command(label="Three companions, MIRI 4QPM", command=self._ex_three_companions)
         menu.add_command(label="North Ecliptic Pole, NIRCam long wavelength bar", command=self._ex_north_ecliptic)
 
     def _ex_single_companion(self):
+        """Calculate the target visibility for an example use-case involving NIRCam coronagraphic observations of a target
+        with a single companion."""
         ra = 344.41269
         dec = -29.62224
         pa1 = 325
@@ -499,6 +595,8 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _ex_three_companions(self):
+        """Calculate the target visibility for an example use-case involving MIRI coronagraphic observations of a
+        science target with three companions."""
         ra = 346.86965
         dec = 21.13425
         pa1 = 45
@@ -531,6 +629,8 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _ex_north_ecliptic(self):
+        """Calculate target visibility for an example use-case involving NIRCam coronagraphic observations of a target
+        at the North Ecliptic pole."""
         ra = 270.0
         dec = 66.5
         pa1 = 0
@@ -563,6 +663,13 @@ class VisibilityCalculator(object):
         self.update_plot()
 
     def _build_date_controls(self, frame):
+        """Build the date controls.
+
+        Parameters
+        ----------
+        frame : ttk.Frame
+            Frame to contain the date controls.
+        """
         ttk.Label(frame, text="Timesteps per year:").grid(column=0, row=0, sticky=(N, W))
         self.npoints_value = StringVar()
         self.npoints_value.set(DEFAULT_NPOINTS)
@@ -575,13 +682,22 @@ class VisibilityCalculator(object):
 
     # Clear the SIMBAD ID when user edits RA or Dec
     def _clear_simbad_id(self, *_):
+        """Clear SIMBAD ID if user supplies RA or Dec coordinates."""
         self.simbad_id.set(self.USER_SUPPLIED_COORDS_MSG)
 
     def _clear_simbad_entry(self, *_):
+        """Clear SIMBAD entry"""
         self.simbad_query.set('')
         self._clear_simbad_id()
 
     def _build_simbad_lookup(self, frame):
+        """Build SIMBAD Target Resolver tool.
+
+        Parameters
+        ----------
+        frame: ttk.Frame
+            Frame to contain the SIMBAD Target Resolver fields.
+        """
         # SIMBAD lookup
         simbad_label = ttk.Label(frame, text="SIMBAD Target Resolver")
         simbad_label.grid(column=0, row=0, sticky=(N, W), columnspan=4)
@@ -622,6 +738,7 @@ class VisibilityCalculator(object):
         ecliptic_display.grid(column=0, row=6, sticky=(N, W, E), columnspan=4)
 
         def _update_ecliptic(*_):
+            """Update the target's ecliptic coordinates."""
             try:
                 ra, dec = float(self.ra_value.get()), float(self.dec_value.get())
             except ValueError:
@@ -645,6 +762,13 @@ class VisibilityCalculator(object):
         frame.columnconfigure(1, weight=1)
 
     def _build_companion_controls(self, frame):
+        """Build the controls for the Companions frame.
+
+        Parameters
+        ----------
+        frame : ttk.Frame
+            Frame to contain the Companion controls.
+        """
         # (show?) PA deg   Sep arcsec
         ttk.Label(frame, text="PA (º)").grid(column=1, row=0)
         ttk.Label(frame, text="Sep (\")").grid(column=2, row=0)
@@ -652,10 +776,13 @@ class VisibilityCalculator(object):
         for i in range(1, 4):
             # variables
             visible = BooleanVar(value=False)
+
             # ensure widgets are updated when `visible` changes:
 
             def _update_companions(*args):
+                """Update widget when companion set as 'visible'."""
                 self.update_companions()
+
             visible.trace('w', _update_companions)
             pa = StringVar(value="0.00")
             sep = StringVar(value="0.00")
@@ -686,6 +813,13 @@ class VisibilityCalculator(object):
         frame.columnconfigure(2, weight=1)
 
     def _build_instrument_mask_controls(self, frame):
+        """Build the controls for the Instrument and Mask frame.
+
+        Parameters
+        ----------
+        frame : ttk.Frame
+            Frame to contain the Instrument and Mask controls.
+        """
         ttk.Label(frame, text="Instrument", anchor=E).grid(column=0, row=0)
         self.instrument_value = StringVar(value=self.NIRCAM_A)
         instrument_combo = ttk.Combobox(
@@ -716,22 +850,35 @@ class VisibilityCalculator(object):
         # Hacks to prevent wonky looking text selection within readonly
         # combo boxes
         def _clear_selection_instr(evt):
+            """Clear instrument selection."""
             instrument_combo.selection_clear()
+
         instrument_combo.bind('<<ComboboxSelected>>', _clear_selection_instr)
 
         def _clear_selection_aper(evt):
+            """Clear aperture selection."""
             apername_combo.selection_clear()
+
         apername_combo.bind('<<ComboboxSelected>>', _clear_selection_aper)
 
         # Update apernames based on instrument
         def _update_apernames(*args):
+            """Update aperture names based on instrument choice."""
             # throw away args, no useful info there
             values = self.INSTRUMENT_TO_APERNAMES[self.instrument_value.get()]
             apername_combo['values'] = values
             self.apername_value.set(values[0])
+
         self.instrument_value.trace('w', _update_apernames)
 
     def _build_plots(self, frame):
+        """Build plots.
+
+        Parameters
+        ----------
+        frame : ttk.Frame
+            Frame to contain the plots.
+        """
         self.figure = Figure(figsize=(8, 8), dpi=72)
 
         # initialized when the plot is updated:
@@ -744,7 +891,8 @@ class VisibilityCalculator(object):
 
         self.observable_pa = Text(x=0.1, y=0.098, text="PA =", transform=self.figure.transFigure, figure=self.figure)
         self.figure.texts.append(self.observable_pa)
-        self.observable_day = Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure, figure=self.figure)
+        self.observable_day = Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure,
+                                   figure=self.figure)
         self.figure.texts.append(self.observable_day)
 
         detector_axes = (0.55, 0.3, 0.4, 0.6)
@@ -760,15 +908,18 @@ class VisibilityCalculator(object):
         line_height = 0.04
         for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
             v_pos -= line_height
-            marker = Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color, transform=self.figure.transFigure, figure=self.figure)
+            marker = Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color,
+                               transform=self.figure.transFigure, figure=self.figure)
             self.figure.patches.append(marker)
             self.companion_legend_markers.append(marker)
 
-            label = Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure, figure=self.figure)
+            label = Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure,
+                         figure=self.figure)
             self.figure.texts.append(label)
             self.companion_legend_labels.append(label)
 
-            info = Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure, figure=self.figure)
+            info = Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure,
+                        figure=self.figure)
             self.figure.texts.append(info)
             self.companion_info.append(info)
 
@@ -781,11 +932,19 @@ class VisibilityCalculator(object):
         self._canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
         def on_key_event(event):
+            """Implement the default Matplotlib key bindings for the canvas and toolbar on key event.
+
+            Parameters
+            ----------
+            event : `KeyEvent`
+                A key event.
+            """
             key_press_handler(event, self._canvas, self._toolbar)
 
         self._canvas.mpl_connect('key_press_event', on_key_event)
 
     def do_simbad_lookup(self):
+        """Query SIMBAD using user entered target ID field."""
         search_string = self.simbad_query.get()
         if not len(search_string.strip()) > 0:
             self.error_modal("Search query for SIMBAD must not be empty")
@@ -795,11 +954,13 @@ class VisibilityCalculator(object):
             try:
                 result = query_simbad(search_string.strip())
             except requests.exceptions.Timeout:
-                self.error_modal("Cannot reach SIMBAD! Check your network connection, or see if perhaps SIMBAD is down...")
+                self.error_modal(
+                    "Cannot reach SIMBAD! Check your network connection, or see if perhaps SIMBAD is down...")
                 return
 
             if result is None:
-                self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
+                self.error_modal(
+                    "No object found for this identifier! Try a different query, or supply RA and Dec manually.")
                 return
 
             self.ra_value.set(str(result.ra))
@@ -807,7 +968,7 @@ class VisibilityCalculator(object):
             self.simbad_id.set(result.id)
 
     def update_companions(self):
-        # handle disabling / enabling entries
+        """Handle companion disabling/ enabling entries."""
         for comp, widg in zip(self.companions, self.companion_widgets):
             visible, pa, sep = comp
             check, pa_entry, sep_entry = widg
@@ -819,6 +980,7 @@ class VisibilityCalculator(object):
                 sep_entry.config(state="disabled")
 
     def update_plot(self):
+        """Update plots. Raises an exception if unsupported instrument is selected in the Instrument frame."""
         try:
             ra = float(self.ra_value.get())
             dec = float(self.dec_value.get())
@@ -901,6 +1063,7 @@ class VisibilityCalculator(object):
         self.update_button.config(state='normal')
 
     def zoom_to_fit(self):
+        """Zoom display to fit"""
         if self.result is None:
             return
         max_separation = max([c['separation'] for c in self.result.companions])
@@ -910,6 +1073,7 @@ class VisibilityCalculator(object):
         self._canvas.draw()
 
     def _update_observability(self):
+        """Update observability plot."""
         days = self.result.days
         elongation_rad = self.result.elongation_rad
         roll_rad = self.result.roll_rad
@@ -921,7 +1085,8 @@ class VisibilityCalculator(object):
         else:
             ax.set_title('Observability of {}'.format(self.simbad_id.get()))
 
-        (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black', label='Solar elongation')  # same for all 20 roll angles?? pick first
+        (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black',
+                                     label='Solar elongation')  # same for all 20 roll angles?? pick first
 
         collapsed_mask = np.any(observable, axis=0)
         observable_series = ax.scatter(
@@ -976,12 +1141,30 @@ class VisibilityCalculator(object):
         ax.set_ylabel('Degrees')
 
     def work_backwards(self, x_array, y_array, xdata, ydata):
-        dist = (x_array - xdata)**2 + (y_array - ydata)**2
+        """Work backwards from point in array.
+
+        Parameters
+        ----------
+        x_array :
+            Array of X data values.
+        y_array :
+            Array of Y data values.
+        xdata :
+            X data point.
+        ydata :
+            Y data point.
+        """
+        dist = (x_array - xdata) ** 2 + (y_array - ydata) ** 2
         dist[self.result.observable == 0] = np.nan
         y, x = np.unravel_index(np.nanargmin(dist), dist.shape)
         return y, x
 
     def _on_pick(self, event):
+        """[summary]
+
+        Args:
+            event ([type]): [description]
+        """
         self._clear_plot_overlay()
         if event.artist.axes == self.detector_ax:
             self._on_detector_pick(event)
@@ -989,10 +1172,27 @@ class VisibilityCalculator(object):
             self._on_observability_pick(event)
 
     def _on_observability_pick(self, event):
-        yidx, xidx = self.work_backwards(self._days_for_all_rolls, self._theta, event.mouseevent.xdata, event.mouseevent.ydata)
+        """Pick event when user picks a location on observability plot.
+
+        Parameters
+        -----------
+        event : MouseEvent
+            The mouse event that generated the pick.
+
+        """
+        yidx, xidx = self.work_backwards(self._days_for_all_rolls, self._theta, event.mouseevent.xdata,
+                                         event.mouseevent.ydata)
         self._add_plot_overlay(yidx, xidx)
 
     def _on_detector_pick(self, event):
+        """Pick event when user picks a location on detector plot.
+
+        Parameters
+        ----------
+        event : MouseEvent
+            The mouse event that generated the pick.
+            event ([type]): [description]
+        """
         companions = (
             (self.c1_plot_group, (self.result.c1_x, self.result.c1_y)),
             (self.c2_plot_group, (self.result.c2_x, self.result.c2_y)),
@@ -1007,6 +1207,7 @@ class VisibilityCalculator(object):
                 return
 
     def _clear_plot_overlay(self):
+        """Clear plot overlay."""
         while len(self._plot_overlay_elements):
             elem = self._plot_overlay_elements.pop()
             elem.remove()
@@ -1014,7 +1215,17 @@ class VisibilityCalculator(object):
             text.set_text('')
 
     def _add_plot_overlay(self, yidx, xidx):
-        obs_highlight = self.observability_ax.scatter(self._days_for_all_rolls[yidx, xidx], self._theta[yidx, xidx], color='white', edgecolor='black', s=100)
+        """Add an overlay to plot.
+
+        Parameters
+        ----------
+            yidx :
+                Y coordinate of the overlay element.
+            xidx :
+                X coordinate of the overlay element.
+        """
+        obs_highlight = self.observability_ax.scatter(self._days_for_all_rolls[yidx, xidx], self._theta[yidx, xidx],
+                                                      color='white', edgecolor='black', s=100)
         self._plot_overlay_elements.append(obs_highlight)
         obs_vline = self.observability_ax.axvline(self._days_for_all_rolls[yidx, xidx], color=BLUE_GGPLOT)
         self._plot_overlay_elements.append(obs_vline)
@@ -1051,8 +1262,10 @@ class VisibilityCalculator(object):
             arcsec_per_pixel = np.average([self.result.aperture.XSciScale, self.result.aperture.YSciScale])
             scale_factor = self.result.aperture.XSciSize * arcsec_per_pixel / 2.0
 
-        n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
-        n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
+        n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(
+            self.result.n_x[yidx, xidx] ** 2 + self.result.n_y[yidx, xidx] ** 2)
+        n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(
+            self.result.n_x[yidx, xidx] ** 2 + self.result.n_y[yidx, xidx] ** 2)
 
         u = np.array([0, 1])
         north_line, = self.detector_ax.plot(scale_factor * n_x_temp * u, scale_factor * n_y_temp * u, color=RED_GGPLOT)
@@ -1061,16 +1274,20 @@ class VisibilityCalculator(object):
         north_label = self.detector_ax.text(scale_factor / 2 * n_x_temp, scale_factor / 2 * n_y_temp, "N")
         self._plot_overlay_elements.append(north_label)
 
-        e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
-        e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
+        e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(
+            self.result.e_x[yidx, xidx] ** 2 + self.result.e_y[yidx, xidx] ** 2)
+        e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(
+            self.result.e_x[yidx, xidx] ** 2 + self.result.e_y[yidx, xidx] ** 2)
 
-        east_line, = self.detector_ax.plot(scale_factor * e_x_temp * u, scale_factor * e_y_temp * u, color=YELLOW_GGPLOT)
+        east_line, = self.detector_ax.plot(scale_factor * e_x_temp * u, scale_factor * e_y_temp * u,
+                                           color=YELLOW_GGPLOT)
         self._plot_overlay_elements.append(east_line)
         east_label = self.detector_ax.text(scale_factor / 2 * e_x_temp, scale_factor / 2 * e_y_temp, "E")
         self._plot_overlay_elements.append(east_label)
         self._canvas.draw()
 
     def _update_detector(self):
+        """Update detector plot."""
         ax = self.detector_ax
         ax.clear()
         aperture = self.result.aperture
@@ -1101,6 +1318,7 @@ class VisibilityCalculator(object):
         ax.set_ylabel('y (arcsec, ideal frame)')
 
     def _overlay_mask(self):
+        """Plot coronagraphic mask overlay."""
         while self._mask_artists:
             artist = self._mask_artists.pop()
             artist.remove()
@@ -1112,7 +1330,8 @@ class VisibilityCalculator(object):
         mask_artists = []
 
         def _overlay_miri_ta_positions():
-            '''MIRI has eight target acq locations for each coronagraph which could result in persistence'''
+            """Plot the positions of the MIRI target acquisition locations. MIRI has eight target acq locations
+             for each coronagraph which could result in persistence."""
             ta_loc_spot_radius = 0.2  # arcsec
             mask_name = re.match(r'MIRIM_CORON(\d+|LYOT)', aperture.AperName).groups()[0]
             ta_apers = [
@@ -1133,13 +1352,9 @@ class VisibilityCalculator(object):
                 mask_artists.append(Circle(ta_loc, radius=ta_loc_spot_radius, color=GRAY_GGPLOT, alpha=0.25))
                 quadrant = mask_ta_aper[-2:]
 
-                mask_artists.append(Annotation(
-                    'TA {}'.format(ta_apt_name_lookup[quadrant]),
-                    ta_loc,
-                    xytext=(ta_loc[0], ta_loc[1] + 0.25),
-                    horizontalalignment='center',
-                    alpha=0.5,
-                ))
+                mask_artists.append(Annotation('TA {}'.format(ta_apt_name_lookup[quadrant]), ta_loc,
+                                               xytext=(ta_loc[0], ta_loc[1] + 0.25), horizontalalignment='center',
+                                               alpha=0.5, ))
 
         if 'NRC' in aperture_name:
             for quad_verts in NIRCAM_CORON_BAD_AREAS:
@@ -1252,5 +1467,6 @@ class VisibilityCalculator(object):
 
 
 def run():
+    """Run the Target Visibility Calculator."""
     app = VisibilityCalculator()
     app.start()
