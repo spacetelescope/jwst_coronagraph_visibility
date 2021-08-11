@@ -15,7 +15,10 @@ except ImportError:
     from urllib.parse import quote
 
 import matplotlib
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of 37297c1... Merge pull request #43 from mfixstsci/add-github-actions
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 
