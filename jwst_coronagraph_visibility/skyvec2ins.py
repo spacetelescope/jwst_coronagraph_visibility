@@ -34,13 +34,33 @@ import numpy as np
 
 
 def _wrap_to_2pi(scalar_or_arr):
-    """Offsets angles outside 0 <= x <= 2 * pi to lie within the interval"""
+    """Wrap angle in radians to the interval 0 <= x <= 2 * pi.
+
+    Parameters
+    ----------
+    scalar_or_arr : int or array
+        Angle or array of angles, in radians.
+
+    Returns
+    -------
+        Array of wrapped angles with values in the range [0, 2*pi].
+    """
     return np.asarray(scalar_or_arr) % (2 * np.pi)
 
 
 def sun_ecliptic_longitude(start_date):
-    """Compute ecliptic longitude of sun on start_date
-    using equations from http://aa.usno.navy.mil/faq/docs/SunApprox.php
+    """Compute ecliptic longitude of sun on a given start date using equations from
+    http://aa.usno.navy.mil/faq/docs/SunApprox.php [broken].
+    
+    Parameters
+    ----------
+    start_date : datetime
+        Start date of the year-long interval evaluated by skyvec2ins.
+
+    Returns
+    -------
+    lambda_sun : float
+        The longitude of quadrature at day 0.
     """
     n_days = (start_date - datetime.datetime(2000, 1, 1, 12, 00)).days
     mean_longitude = 280.459 + 0.98564736 * n_days
@@ -54,11 +74,20 @@ def sun_ecliptic_longitude(start_date):
 
 
 def ad2lb(alpha_rad, delta_rad):
-    """
-    Converts celestial coordinates (ra, dec), i.e. (alpha, delta)
-    to ecliptic coordinates (lambda, beta). All angles in radians.
+    """Convert equatorial coordinates (RA, Dec, i.e. alpha, delta) to ecliptic coordinates (lambda, beta)
+    according to Eq 3 in Leinert et al. 1998.
 
-    See Eq 3 in Leinert et al. 1998
+    Parameters
+    ----------
+    alpha_rad : ndarray
+        Right ascension in radians.
+    delta_rad : ndarray
+        Declination in radians.
+
+    lambda_rad : ndarray
+        Ecliptic longitude in radians.
+    beta_rad
+        Ecliptic latitude in radians.
     """
     obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
     obliq *= np.pi / 180.0
@@ -73,10 +102,22 @@ def ad2lb(alpha_rad, delta_rad):
 
 
 def lb2ei(lmlsun, beta):
-    """Convert ecliptic coordinates (lambda-lambda_sun, beta) to
-    alternative ecliptic coordinates (epsilon, i). All angles in radians.
+    """Convert ecliptic coordinates (lambda-lambda_sun, beta) to alternative ecliptic coordinates (epsilon, i)
+    according to Eq 11 in Leinert et al. 1998.
 
-    See Eq 11 in Leinert et al. 1998
+    Parameters
+    ----------
+    beta : numpy.ndarray
+        Ecplitic longitude in radians.
+    lmlsun : numpy.ndarray
+        Ecliptic lattitude in radians.
+
+    Returns
+    -------
+    elong : numpy.ndarray
+        Elongation (angular distance from the sun to the field-of-view) in radians.
+    inc : numpy.ndarray
+        Inclination (position angle counted from the ecliptic counterclockwise) in radians.
     """
     # convert to an elongation in radians (see Eq 11 in Leinert et al. 1998)
     elong = np.arccos(np.cos(lmlsun) * np.cos(beta))
@@ -95,10 +136,22 @@ def lb2ei(lmlsun, beta):
 
 
 def ei2lb(elong, inc):
-    """Convert alternative ecliptic coordinates (epsilon, i) to
-    ecliptic coordinates (lambda-lambda_sun, beta). All angles in radians.
+    """Convert alternative ecliptic coordinates (epsilon, i) to ecliptic coordinates (lambda-lambda_sun, beta)
+    according to Eq 12 in Leinert et al. 1998.
 
-    See Eq 12 in Leinert et al. 1998
+    Parameters
+    ----------
+    elong : numpy.ndarray
+        Elongation (angular distance from the sun) in radians.
+    inc : ndarray
+        Inclination (position angle counted from the ecliptic counterclockwise) in radians.
+
+    Returns
+    -------
+    lmlsun : numpy.ndarray
+        Differential helioecliptic longitude in radians.
+    beta : numpy.ndarray
+        Ecliptic latitude in radians.
     """
     beta = np.arcsin(np.sin(inc) * np.sin(elong))
     coslmlsun = np.cos(elong) / np.cos(beta)
@@ -108,11 +161,22 @@ def ei2lb(elong, inc):
 
 
 def lb2ad(lambda_rad, beta_rad):
-    """Converts ecliptic coordinates (lambda, beta) to
-    celestial coordinates (ra, dec), i.e. (alpha, delta).
-    All angles in radians.
+    """Convert ecliptic coordinates (lambda, beta) to equatorial coordinates (RA, Dec, i.e. alpha, delta)
+    according to Eq 4 in Leinert et al. 1998.
 
-    See Eq 4 in Leinert et al. 1998
+    Parameters
+    ----------
+    lambda_rad : ndarray
+        Ecliptic longitude in radians.
+    beta_rad : numpy.ndarray
+        Ecliptic latitude in radians.
+
+    Returns
+    -------
+    alpha : ndarray
+        Equatorial Right Ascension in radians.
+    delta : ndarray
+        Equatorial Declination in radians.
     """
 
     obliq = _tenv(23, 26, 21.45)  # J2000 obliquity of Earth in degrees
@@ -129,6 +193,21 @@ def lb2ad(lambda_rad, beta_rad):
 
 
 def _tenv(dd, mm, ss):
+    """Convert angle from sexagesimal (DMS) to decimal degree notation.
+
+    Parameters
+    ----------
+    ss : int
+        Seconds of sexagesimal measure
+    mm : int
+        Minutes of sexagesimal measure
+    dd : int
+        Degrees of sexagesimal measure
+
+    Returns
+    -------
+        Angle in decimal degrees.
+    """
     sgn, dd_mag = dd / dd, np.abs(dd)
     return sgn * (dd_mag + np.abs(mm) / 60.0 + np.abs(ss) / 3600.0)
 
@@ -138,29 +217,30 @@ def skyvec2ins(ra, dec,
                separation_as1, separation_as2, separation_as3,
                aper, start_date,
                npoints=360, nrolls=15, maxvroll=7.0):
-    """
+    """JWST coronagraphic target visibility calculator.
+
     Parameters
     ----------
     ra : float
-        right ascension of target in decimal degrees (0-360)
+        Right ascension of science target in decimal degrees (0-360)
     dec : float
-        declination of target in decimal degrees (-90, 90)
+        Declination of science target in decimal degrees (-90, 90)
     pa1, pa2, pa3 : float
-        position angles of companions in degrees east of north
+        Position angles of target companions in degrees east of north
     separation_as1, separation_as2, separation_as3 : float
-        separations of companions in arcseconds
+        Separations of target companions in arcseconds.
     aper : jwxml.Aperture object
         Aperture as loaded from the instrument SIAF
     start_date : datetime.datetime
         Start date of the year-long interval evaluated by skyvec2ins
     npoints : int
-        number of points to sample in the year-long interval
-        to find observable dates (default: 360)
+        Number of points to sample in the year-long interval to find
+        observable dates (default: 360)
     nrolls : int
-        number of roll angles in the allowed roll angle range to
+        Number of roll angles in the allowed roll angle range to
         sample at each date (default: 15)
     maxvroll : float
-        maximum number of degrees positive or negative roll around
+        Maximum number of degrees positive or negative roll around
         the boresight to allow (as designed: 7.0)
 
     .. note::
@@ -172,35 +252,34 @@ def skyvec2ins(ra, dec,
     Returns
     -------
     x : numpy.ndarray
-        float array of length `npoints` containing days from starting
+        Float array of length `npoints` containing days from starting
         date
     observable : numpy.ndarray
         uint8 array of shape (`nrolls`, `npoints`) that is 1 where
         the target is observable and 0 otherwise
     elongation_rad : numpy.ndarray
-        float array of length `npoints` containing elongation of the
+        Float array of length `npoints` containing elongation of the
         observatory in radians
     roll_rad : numpy.ndarray
-        float array of shape (`nrolls`, `npoints`) containing V3 PA
+        Float array of shape (`nrolls`, `npoints`) containing V3 PA
         in radians
     c1_x, c1_y, c2_x, c2_y, c3_x, c3_y : numpy.ndarray
-        float array of shape (`nrolls`, `npoints`) containing the
+        Float array of shape (`nrolls`, `npoints`) containing the
         location of the companions in "Idl" (ideal) frame coordinates
     n_x, n_y, e_x, e_y : numpy.ndarray
-        float array of shape (`nrolls`, `npoints`) containing the location
-        of a reference "north" vector and "east" vector from the
-        center in "Idl" (ideal) frame coordinates
+        Float array of shape (`nrolls`, `npoints`) containing the
+        location of a reference "north" vector and "east" vector from
+        the center in "Idl" (ideal) frame coordinates
     """
-    # Per Chris Stark:
-    # > lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
-    # > So it should be 90 deg W of the solar longitude.
+    # lambda_rad0 is commented as the longitude of quadrature at day 0 of the code.
+    # So it should be 90 deg W of the solar longitude.
     # West is negative, so subtract 90 from the angle (in deg) and convert to radians.
     lambda_sun = sun_ecliptic_longitude(start_date)
     lambda_rad0 = np.deg2rad(lambda_sun - 90)
 
     # Conversions
-    ra_rad = np.deg2rad(ra)
-    dec_rad = np.deg2rad(dec)
+    ra_rad = np.deg2rad(ra)  # Convert RA from decimal degrees to radians
+    dec_rad = np.deg2rad(dec)  # Convert Dec from decimal degrees to radians
 
     # We want to know the PA of the V3 axis. A simple way to do this
     # would be to form the 3 telescope axes as normal unit vectors in Cartesian
@@ -215,7 +294,7 @@ def skyvec2ins(ra, dec,
     # on the pointing vector, etc...to solve the problem correctly we'd need
     # a root finder.  To speed things up, we simply assume the PA of the
     # telescope when pointing at the star is the same as when the
-    # coronagraphmask is on the star--this is an approximation! The
+    # coronagraph mask is on the star--this is an approximation! The
     # approximation is valid if the coronagraphs are close to
     # the optical axis, which isn't too bad of an assumption.
     pointing_rad = [ra_rad, dec_rad]  # this is our approximation
@@ -241,7 +320,6 @@ def skyvec2ins(ra, dec,
 
     # Calculate celestial coordinates of V2 & V3 axis
     # First, calculate solar elongation & inclination
-
     v3_elongation_rad = elongation_rad + (np.pi / 2)
     v3_inc_rad = inc_rad.copy()  # explicit copy -- does mutating this affect things later??
     j = np.where(v3_elongation_rad > np.pi)  # Make sure the solar elongation is between 0 - 180 degrees
@@ -455,6 +533,30 @@ def skyvec2ins(ra, dec,
 
 
 def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
+    """Transform to detector coordinates.
+
+    Parameters
+    ----------
+    separation_as : float
+        Separation of companion in arcseconds.
+    pa : float
+        Position Angle of companion in degrees.
+    roll_rad : numpy.ndarray
+        Float array of shape (`nrolls`, `npoints`) containing the V3 PA in radians.
+    npoints : int
+        Number of points to sample in the year-long interval to find observable dates (default: 360).
+    nrolls : int
+        Number of roll angles in the allowed roll angle range to sample at each date (default: 15).
+    aper : jwxml.Aperture object
+        Aperture as loaded from the instrument SIAF.
+
+    Returns
+    -------
+    c1_x:
+        Detector X coordinate of star and companion.
+    c1_y :
+        Detector Y coordinate of star and companion.
+    """
     pa_rad = np.deg2rad(pa)  # companion 1
     # Calculate the (V2,V3) coordinates of the coronagraph center
     # That's where we want to stick the target
@@ -504,15 +606,30 @@ def detector_transform(nrolls, npoints, roll_rad, pa, separation_as, aper):
 
 
 def _Tel2Idl(aper, V2, V3):
-    """ Convert Tel to Idl
-    input in arcsec, output in arcsec
-    This transformation involves going from global V2,V3 to local angles with respect to some
-    reference point, and possibly rotating the axes and/or flipping the parity of the X axis.
+    """Convert from JWST telescope coordinate system to to ideal frame coordinates; input in arcsec, output in arcsec.
+    This transformation involves going from global V2,V3 to local angles with respect to some reference point, and
+    possibly rotating the axes and/or flipping the parity of the X axis.
+
     WARNING
     --------
-    This is an implementation of the planar approximation, which is adequate for most
-    purposes but may not be for all. Error is about 1.7 mas at 10 arcminutes from the tangent
-    point. See JWST-STScI-1550 for more details.
+    This is an implementation of the planar approximation, which is adequate for most purposes but may not be for all.
+    Error is about 1.7 mas at 10 arcminutes from the tangent point. See JWST-STScI-1550 for more details.
+
+    Parameters
+    ----------
+    V3 :
+        V3 coordinate, in arcsec.
+    V2 :
+        V2 coordinate, in arcsec.
+    aper : jwxml.Aperture object
+        Aperture as loaded from the instrument SIAF.
+
+    Returns 
+    -------
+    XIdl : ndarray
+        Y coordinate in ideal frame.
+    YIdl : ndarray
+        X coordinate in ideal frame.
     """
 
     dV2 = np.asarray(V2, dtype=float) - aper.V2Ref
