@@ -1,7 +1,6 @@
-import datetime
 from os.path import abspath, dirname, join, isdir
-
 import numpy as np
+import datetime
 
 from .. import skyvec2ins
 from ..gui import get_aperture
@@ -11,7 +10,6 @@ START_DATE = datetime.datetime(2018, 10, 1)
 NPOINTS = 360
 NROLLS = 20
 MAXVROLL = 10.0
-
 
 def _save_test_case(test_case_name, aperture,
                     ra, dec, pa1, pa2, pa3,
@@ -65,7 +63,6 @@ def _save_test_case(test_case_name, aperture,
         outpath = join(case_path, '{}.csv'.format(name))
         np.savetxt(outpath, arr, delimiter=',')
         print('Saved', outpath)
-
 
 def _generate_test_outputs():
     """Generate skyvec2ins outputs for each test case."""
@@ -122,7 +119,6 @@ def _generate_test_outputs():
         separation_as3=0,
     )
 
-
 def _load_test_case(test_case_name):
     """Load the output files for a given test case.
 
@@ -149,7 +145,6 @@ def _load_test_case(test_case_name):
         'e_x', 'e_y'
     )
     return (np.genfromtxt(join(case_path, '{}.csv'.format(n)), delimiter=',') for n in arrs)
-
 
 def _compare_outputs(reference, computed):
     """Compare computed outputs to the reference outputs (those on file).
@@ -190,7 +185,8 @@ def _compare_outputs(reference, computed):
     assert np.allclose(roll_rad, t_roll_rad, atol=2e-6)
     assert not np.any((observable == 1) ^ (t_observable == 1))
 
-    nircam_pixelscale = 0.0311  # for short-wavelen channels, SIAF PRDDEVSOC-D-012, 2016 April
+
+    nircam_pixelscale = 0.0311 # for short-wavelen channels, SIAF PRDDEVSOC-D-012, 2016 April
     siaf_transform_epsilon = nircam_pixelscale / 100
     # rationale: comparison of the SIAF transforms shows they should be
     # mathematically correct in both implementations, but numerical errors are
@@ -207,11 +203,10 @@ def _compare_outputs(reference, computed):
     assert np.allclose(c2_y, t_c2_y, atol=siaf_transform_epsilon)
     assert np.allclose(c3_x, t_c3_x, atol=siaf_transform_epsilon)
     assert np.allclose(c3_y, t_c3_y, atol=siaf_transform_epsilon)
-    assert np.allclose(n_x, t_n_x, atol=siaf_transform_epsilon)
-    assert np.allclose(n_y, t_n_y, atol=siaf_transform_epsilon)
-    assert np.allclose(e_x, t_e_x, atol=siaf_transform_epsilon)
-    assert np.allclose(e_y, t_e_y, atol=siaf_transform_epsilon)
-
+    assert np.allclose( n_x,  t_n_x, atol=siaf_transform_epsilon)
+    assert np.allclose( n_y,  t_n_y, atol=siaf_transform_epsilon)
+    assert np.allclose( e_x,  t_e_x, atol=siaf_transform_epsilon)
+    assert np.allclose( e_y,  t_e_y, atol=siaf_transform_epsilon)
 
 def test_fomalhaut():
     """Test skyvec2ins using Fomalhaut as a test case."""
@@ -234,7 +229,6 @@ def test_fomalhaut():
     )
     _compare_outputs(reference, computed)
 
-
 def test_1RXSJ160929p1_210524():
     """Test skyvec2ins using 1RXSJ160929p1_210524 as a test case."""
     reference = _load_test_case('1RXSJ160929p1-210524')
@@ -256,7 +250,6 @@ def test_1RXSJ160929p1_210524():
     )
     _compare_outputs(reference, computed)
 
-
 def test_HR8799():
     """Test skyvec2ins using HR8799 as a test case."""
     reference = _load_test_case('HR8799')
@@ -277,7 +270,6 @@ def test_HR8799():
         maxvroll=MAXVROLL,
     )
     _compare_outputs(reference, computed)
-
 
 def test_NGC6543():
     """Test skyvec2ins using HR8799 as a test case."""
