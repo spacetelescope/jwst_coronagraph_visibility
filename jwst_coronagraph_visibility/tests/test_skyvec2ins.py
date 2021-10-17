@@ -14,6 +14,23 @@ MAXVROLL = 10.0
 def _save_test_case(test_case_name, aperture,
                     ra, dec, pa1, pa2, pa3,
                     separation_as1, separation_as2, separation_as3):
+    """Compute skyvec2ins outputs for test case and save to seperate .csv files.
+
+    Parameters
+    ----------
+    test_case_name : str
+        Name of the test case
+    aperture : jwxml.Aperture object
+        Aperture as loaded from the instrument SIAF
+    ra : float
+        Right ascension of science target in decimal degrees (0-360).
+    dec : float
+        Declination of science target in decimal degrees (-90, 90).
+    pa1, pa2, pa3 : float
+        Position angles of target companions in degrees east of north.
+    separation_as1, separation_as2, separation_as3 : float
+        Separations of target companions in arcseconds.
+    """
     case_path = join(TARGETS_DIR, test_case_name)
     arrnames = (
         'x',
@@ -26,7 +43,6 @@ def _save_test_case(test_case_name, aperture,
         'n_x', 'n_y',
         'e_x', 'e_y'
     )
-
 
     computed = skyvec2ins.skyvec2ins(
         ra=ra,
@@ -49,6 +65,7 @@ def _save_test_case(test_case_name, aperture,
         print('Saved', outpath)
 
 def _generate_test_outputs():
+    """Generate skyvec2ins outputs for each test case."""
     # Fomalhaut
     _save_test_case(
         'Fomalhaut',
@@ -103,6 +120,17 @@ def _generate_test_outputs():
     )
 
 def _load_test_case(test_case_name):
+    """Load the output files for a given test case.
+
+    Parameters
+    ----------
+    test_case_name: str
+        Name of the test case.
+
+    Returns
+    -------
+    Loaded test case outputs.
+    """
     case_path = join(TARGETS_DIR, test_case_name)
     assert isdir(case_path)
     arrs = (
@@ -119,6 +147,15 @@ def _load_test_case(test_case_name):
     return (np.genfromtxt(join(case_path, '{}.csv'.format(n)), delimiter=',') for n in arrs)
 
 def _compare_outputs(reference, computed):
+    """Compare computed outputs to the reference outputs (those on file).
+
+    Parameters
+    ----------
+    reference : tuple
+        Reference outputs for test case.
+    computed : tuple
+        Computed outputs for test case.
+    """
     (
         x,
         observable,
@@ -172,6 +209,7 @@ def _compare_outputs(reference, computed):
     assert np.allclose( e_y,  t_e_y, atol=siaf_transform_epsilon)
 
 def test_fomalhaut():
+    """Test skyvec2ins using Fomalhaut as a test case."""
     reference = _load_test_case('Fomalhaut')
     aperture = get_aperture('NIRCam', 'NRCA2_MASK210R')
     computed = skyvec2ins.skyvec2ins(
@@ -192,6 +230,7 @@ def test_fomalhaut():
     _compare_outputs(reference, computed)
 
 def test_1RXSJ160929p1_210524():
+    """Test skyvec2ins using 1RXSJ160929p1_210524 as a test case."""
     reference = _load_test_case('1RXSJ160929p1-210524')
     aperture = get_aperture('NIRCam', 'NRCB3_MASKSWB')
     computed = skyvec2ins.skyvec2ins(
@@ -212,6 +251,7 @@ def test_1RXSJ160929p1_210524():
     _compare_outputs(reference, computed)
 
 def test_HR8799():
+    """Test skyvec2ins using HR8799 as a test case."""
     reference = _load_test_case('HR8799')
     aperture = get_aperture('MIRI', 'MIRIM_MASK1065')
     computed = skyvec2ins.skyvec2ins(
@@ -232,6 +272,7 @@ def test_HR8799():
     _compare_outputs(reference, computed)
 
 def test_NGC6543():
+    """Test skyvec2ins using HR8799 as a test case."""
     reference = _load_test_case('NGC6543')
     aperture = get_aperture('MIRI', 'MIRIM_MASKLYOT')
     computed = skyvec2ins.skyvec2ins(
