@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf8 :
 from __future__ import print_function, division
-import sys
-from tkinter import *
-from tkinter import ttk
-import os
-import os.path
+
 import datetime
-import re
+import os.path
 from collections import namedtuple
 from contextlib import contextmanager
+
+from tkinter import *
+from tkinter import ttk
 
 try:
     from urllib import quote
@@ -17,6 +16,7 @@ except ImportError:
     from urllib.parse import quote
 
 from matplotlib import pyplot as plt
+
 plt.style.use('ggplot')
 
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
@@ -30,6 +30,7 @@ from matplotlib.text import Annotation, Text
 import numpy as np
 import requests
 import requests.exceptions
+
 if getattr(sys, 'frozen', False):
     # we are running in a bundle
     bundle_dir = sys._MEIPASS
@@ -40,8 +41,7 @@ else:
 SimbadResult = namedtuple('SimbadResult', ['ra', 'dec', 'id'])
 
 from pysiaf import Siaf
-from .skyvec2ins import skyvec2ins, ad2lb, lb2ad
-from pprint import pprint
+from .skyvec2ins import skyvec2ins, ad2lb
 
 RED_GGPLOT = '#E24A33'
 BLUE_GGPLOT = '#348ABD'
@@ -97,85 +97,85 @@ _NIRCAM_CORON_OFFSET_TEL = compute_v2v3_offset(
 # V2, V3 for A5
 
 NIRCAM_CORON_BAD_AREAS = np.array(
-       [[[ 56.525, -462.2092],
-        [  56.5505, -456.9293],
-        [  61.8066, -456.9541],
-        [  61.7856, -462.2317]],
+    [[[56.525, -462.2092],
+      [56.5505, -456.9293],
+      [61.8066, -456.9541],
+      [61.7856, -462.2317]],
 
-       [[  38.8981, -462.1289],
-        [  38.9384, -456.8408],
-        [  44.2083, -456.8827],
-        [  44.1725, -462.1682]],
+     [[38.8981, -462.1289],
+      [38.9384, -456.8408],
+      [44.2083, -456.8827],
+      [44.1725, -462.1682]],
 
-       [[  96.9128, -462.0046],
-        [  96.9041, -456.7388],
-        [ 102.1434, -456.7248],
-        [ 102.1565, -461.9892]],
+     [[96.9128, -462.0046],
+      [96.9041, -456.7388],
+      [102.1434, -456.7248],
+      [102.1565, -461.9892]],
 
-       [[ 117.1985, -461.9805],
-        [ 117.1727, -456.7191],
-        [ 122.4112, -456.6854],
-        [ 122.4413, -461.9459]],
+     [[117.1985, -461.9805],
+      [117.1727, -456.7191],
+      [122.4112, -456.6854],
+      [122.4413, -461.9459]],
 
-       [[  76.8615, -462.1433],
-        [  76.8697, -456.8714],
-        [  82.1149, -456.8766],
-        [  82.1112, -462.1468]],
+     [[76.8615, -462.1433],
+      [76.8697, -456.8714],
+      [82.1149, -456.8766],
+      [82.1112, -462.1468]],
 
-       [[ 134.8664, -462.0006],
-        [ 134.8259, -456.7415],
-        [ 140.0682, -456.6904],
-        [ 140.113, -461.949]],
+     [[134.8664, -462.0006],
+      [134.8259, -456.7415],
+      [140.0682, -456.6904],
+      [140.113, -461.949]],
 
-       [[  38.9735, -444.1376],
-        [  38.9862, -442.5039],
-        [  41.2405, -442.5257],
-        [  41.2284, -444.159]],
+     [[38.9735, -444.1376],
+      [38.9862, -442.5039],
+      [41.2405, -442.5257],
+      [41.2284, -444.159]],
 
-       [[  58.114, -444.162],
-        [  58.1216, -442.6566],
-        [  60.3693, -442.6698],
-        [  60.3623, -444.1749]],
+     [[58.114, -444.162],
+      [58.1216, -442.6566],
+      [60.3693, -442.6698],
+      [60.3623, -444.1749]],
 
-       [[  78.2656, -444.1798],
-        [  78.2685, -442.7392],
-        [  80.5116, -442.7435],
-        [  80.5091, -444.1839]],
+     [[78.2656, -444.1798],
+      [78.2685, -442.7392],
+      [80.5116, -442.7435],
+      [80.5091, -444.1839]],
 
-       [[  98.3837, -443.9939],
-        [  98.3826, -442.7426],
-        [ 100.6232, -442.7381],
-        [ 100.6248, -443.9892]],
+     [[98.3837, -443.9939],
+      [98.3826, -442.7426],
+      [100.6232, -442.7381],
+      [100.6248, -443.9892]],
 
-       [[ 118.4879, -443.9169],
-        [ 118.483, -442.6667],
-        [ 120.7234, -442.6532],
-        [ 120.7286, -443.9034]],
+     [[118.4879, -443.9169],
+      [118.483, -442.6667],
+      [120.7234, -442.6532],
+      [120.7286, -443.9034]],
 
-       [[ 137.5412, -444.0201],
-        [ 137.5313, -442.5203],
-        [ 139.7735, -442.4982],
-        [ 139.7839, -443.9979]],
+     [[137.5412, -444.0201],
+      [137.5313, -442.5203],
+      [139.7735, -442.4982],
+      [139.7839, -443.9979]],
 
-       [[  21.83, -463.4815],
-        [  22.1856, -428.4652],
-        [  38.844, -428.6853],
-        [  38.5725, -463.6381]],
+     [[21.83, -463.4815],
+      [22.1856, -428.4652],
+      [38.844, -428.6853],
+      [38.5725, -463.6381]],
 
-       [[ 140.7495, -463.2577],
-        [ 140.4967, -428.7508],
-        [ 149.7032, -428.6478],
-        [ 150.0012, -463.153]],
+     [[140.7495, -463.2577],
+      [140.4967, -428.7508],
+      [149.7032, -428.6478],
+      [150.0012, -463.153]],
 
-       [[  38.8609, -442.5026],
-        [  38.9691, -428.6867],
-        [ 140.4967, -428.7508],
-        [ 140.5833, -442.49]],
+     [[38.8609, -442.5026],
+      [38.9691, -428.6867],
+      [140.4967, -428.7508],
+      [140.5833, -442.49]],
 
-       [[  38.1157, -465.8399],
-        [  38.136, -463.1937],
-        [ 141.1852, -463.0652],
-        [ 141.2094, -465.6963]]])
+     [[38.1157, -465.8399],
+      [38.136, -463.1937],
+      [141.1852, -463.0652],
+      [141.2094, -465.6963]]])
 NIRCAM_CORON_BAD_AREAS[:, :, 0] += _NIRCAM_CORON_OFFSET_TEL[0]
 NIRCAM_CORON_BAD_AREAS[:, :, 1] += _NIRCAM_CORON_OFFSET_TEL[1]
 NIRCAM_CORON_BAD_AREAS.flags.writeable = False
@@ -195,7 +195,8 @@ def query_simbad(query_string):
     """
     # response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
     try:
-        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string), timeout=QUERY_TIMEOUT_SEC)
+        response = requests.get('http://cdsweb.u-strasbg.fr/cgi-bin/nph-sesame/-oI?' + quote(query_string),
+                                timeout=QUERY_TIMEOUT_SEC)
     except (requests.exceptions.ConnectionError):
         return None
     body = response.text
@@ -845,11 +846,13 @@ class VisibilityCalculator(object):
         def _clear_selection_instr(evt):
             """Clear instrument selection."""
             instrument_combo.selection_clear()
+
         instrument_combo.bind('<<ComboboxSelected>>', _clear_selection_instr)
 
         def _clear_selection_aper(evt):
             """Clear aperture selection."""
             apername_combo.selection_clear()
+
         apername_combo.bind('<<ComboboxSelected>>', _clear_selection_aper)
 
         def _update_apernames(*args):
@@ -858,6 +861,7 @@ class VisibilityCalculator(object):
             values = self.INSTRUMENT_TO_APERNAMES[self.instrument_value.get()]
             apername_combo['values'] = values
             self.apername_value.set(values[0])
+
         self.instrument_value.trace('w', _update_apernames)
 
     def _build_plots(self, frame):
@@ -880,7 +884,8 @@ class VisibilityCalculator(object):
 
         self.observable_pa = Text(x=0.1, y=0.098, text="PA =", transform=self.figure.transFigure, figure=self.figure)
         self.figure.texts.append(self.observable_pa)
-        self.observable_day = Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure, figure=self.figure)
+        self.observable_day = Text(x=0.1, y=0.058, text="Day of year =", transform=self.figure.transFigure,
+                                   figure=self.figure)
         self.figure.texts.append(self.observable_day)
 
         detector_axes = (0.55, 0.3, 0.4, 0.6)
@@ -896,15 +901,18 @@ class VisibilityCalculator(object):
         line_height = 0.04
         for i, color in enumerate((RED_GGPLOT, BLUE_GGPLOT, PURPLE_GGPLOT)):
             v_pos -= line_height
-            marker = Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color, transform=self.figure.transFigure, figure=self.figure)
+            marker = Rectangle((0.55, v_pos), width=0.01, height=0.015, facecolor=color,
+                               transform=self.figure.transFigure, figure=self.figure)
             self.figure.patches.append(marker)
             self.companion_legend_markers.append(marker)
 
-            label = Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure, figure=self.figure)
+            label = Text(x=0.57, y=v_pos, text="Companion {}".format(i + 1), transform=self.figure.transFigure,
+                         figure=self.figure)
             self.figure.texts.append(label)
             self.companion_legend_labels.append(label)
 
-            info = Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure, figure=self.figure)
+            info = Text(x=0.57, y=v_pos - line_height / 2, text="# arcsec @ # deg", transform=self.figure.transFigure,
+                        figure=self.figure)
             self.figure.texts.append(info)
             self.companion_info.append(info)
 
@@ -939,11 +947,13 @@ class VisibilityCalculator(object):
             try:
                 result = query_simbad(search_string.strip())
             except requests.exceptions.Timeout:
-                self.error_modal("Cannot reach SIMBAD! Check your network connection, or see if perhaps SIMBAD is down...")
+                self.error_modal(
+                    "Cannot reach SIMBAD! Check your network connection, or see if perhaps SIMBAD is down...")
                 return
 
             if result is None:
-                self.error_modal("No object found for this identifier! Try a different query, or supply RA and Dec manually.")
+                self.error_modal(
+                    "No object found for this identifier! Try a different query, or supply RA and Dec manually.")
                 return
 
             self.ra_value.set(str(result.ra))
@@ -1068,7 +1078,8 @@ class VisibilityCalculator(object):
         else:
             ax.set_title('Observability of {}'.format(self.simbad_id.get()))
 
-        (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black', label='Solar elongation')  # same for all 20 roll angles?? pick first
+        (elongation_line,) = ax.plot(days, np.rad2deg(elongation_rad[0]), color='black',
+                                     label='Solar elongation')  # same for all 20 roll angles?? pick first
 
         collapsed_mask = np.any(observable, axis=0)
         observable_series = ax.scatter(
@@ -1143,7 +1154,7 @@ class VisibilityCalculator(object):
         y: tuple of ndarray
             y-coordinate of picked data point
         """
-        dist = (x_array - xdata)**2 + (y_array - ydata)**2
+        dist = (x_array - xdata) ** 2 + (y_array - ydata) ** 2
         dist[self.result.observable == 0] = np.nan
         y, x = np.unravel_index(np.nanargmin(dist), dist.shape)
         return y, x
@@ -1170,7 +1181,8 @@ class VisibilityCalculator(object):
         event : `KeyEvent`
             The key press/release event.
         """
-        yidx, xidx = self.work_backwards(self._days_for_all_rolls, self._theta, event.mouseevent.xdata, event.mouseevent.ydata)
+        yidx, xidx = self.work_backwards(self._days_for_all_rolls, self._theta, event.mouseevent.xdata,
+                                         event.mouseevent.ydata)
         self._add_plot_overlay(yidx, xidx)
 
     def _on_detector_pick(self, event):
@@ -1212,7 +1224,8 @@ class VisibilityCalculator(object):
             xidx :
                 X coordinate of the overlay element.
         """
-        obs_highlight = self.observability_ax.scatter(self._days_for_all_rolls[yidx, xidx], self._theta[yidx, xidx], color='white', edgecolor='black', s=100)
+        obs_highlight = self.observability_ax.scatter(self._days_for_all_rolls[yidx, xidx], self._theta[yidx, xidx],
+                                                      color='white', edgecolor='black', s=100)
         self._plot_overlay_elements.append(obs_highlight)
         obs_vline = self.observability_ax.axvline(self._days_for_all_rolls[yidx, xidx], color=BLUE_GGPLOT)
         self._plot_overlay_elements.append(obs_vline)
@@ -1249,8 +1262,10 @@ class VisibilityCalculator(object):
             arcsec_per_pixel = np.average([self.result.aperture.XSciScale, self.result.aperture.YSciScale])
             scale_factor = self.result.aperture.XSciSize * arcsec_per_pixel / 2.0
 
-        n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
-        n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(self.result.n_x[yidx, xidx]**2 + self.result.n_y[yidx, xidx]**2)
+        n_x_temp = self.result.n_x[yidx, xidx] / np.sqrt(
+            self.result.n_x[yidx, xidx] ** 2 + self.result.n_y[yidx, xidx] ** 2)
+        n_y_temp = self.result.n_y[yidx, xidx] / np.sqrt(
+            self.result.n_x[yidx, xidx] ** 2 + self.result.n_y[yidx, xidx] ** 2)
 
         u = np.array([0, 1])
         north_line, = self.detector_ax.plot(scale_factor * n_x_temp * u, scale_factor * n_y_temp * u, color=RED_GGPLOT)
@@ -1259,10 +1274,13 @@ class VisibilityCalculator(object):
         north_label = self.detector_ax.text(scale_factor / 2 * n_x_temp, scale_factor / 2 * n_y_temp, "N")
         self._plot_overlay_elements.append(north_label)
 
-        e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
-        e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(self.result.e_x[yidx, xidx]**2 + self.result.e_y[yidx, xidx]**2)
+        e_x_temp = self.result.e_x[yidx, xidx] / np.sqrt(
+            self.result.e_x[yidx, xidx] ** 2 + self.result.e_y[yidx, xidx] ** 2)
+        e_y_temp = self.result.e_y[yidx, xidx] / np.sqrt(
+            self.result.e_x[yidx, xidx] ** 2 + self.result.e_y[yidx, xidx] ** 2)
 
-        east_line, = self.detector_ax.plot(scale_factor * e_x_temp * u, scale_factor * e_y_temp * u, color=YELLOW_GGPLOT)
+        east_line, = self.detector_ax.plot(scale_factor * e_x_temp * u, scale_factor * e_y_temp * u,
+                                           color=YELLOW_GGPLOT)
         self._plot_overlay_elements.append(east_line)
         east_label = self.detector_ax.text(scale_factor / 2 * e_x_temp, scale_factor / 2 * e_y_temp, "E")
         self._plot_overlay_elements.append(east_label)
