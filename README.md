@@ -37,29 +37,10 @@ Documentation can be found online at [JWST Coronagraph Visibility Tool Help](htt
 ## Installation for Users 
 
 ### Installing the Python Package
-#### Recommended: Installing via Astroconda
 
-For ease of installation we recommend using [AstroConda](http://astroconda.readthedocs.io/en/latest/), the preferred release channel for JWST Python-related tools. 
-Install AstroConda according to [their instructions](https://astroconda.readthedocs.io/en/latest/installation.html) and then activate the environment with:
-
-    $ source activate astroconda
-    
-Next, install `jwst_coronagraph_visibility` (along with all its dependencies) with:
-
-    (astroconda)$ conda install jwst_coronagraph_visibility
-  
-#### Installing with conda (but without AstroConda)
-
-If you already use `conda`, but do not wish to install the full suite of STScI software, you can simply add the 
-AstroConda *channel* and install `jwst_coronagraph_visibility` as follows (creating a new environment named `jwst_coronagraph_visibility-env`)::
-
-    $ conda config --add channels http://ssb.stsci.edu/astroconda
-    $ conda create -n jwst_coronagraph_visibility-env jwst_coronagraph_visibility
-    $ source activate jwst_coronagraph_visibility-env
-    
 #### Installing with pip
 
-may be installed from the [Python Package Index](https://pypi.org/) in the usual manner for Python packages.
+CVT may be installed from the [Python Package Index](https://pypi.org/) in the usual manner for Python packages.
  
     $ pip install jwst_coronagraph_visibility 
 
