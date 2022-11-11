@@ -1018,29 +1018,29 @@ class VisibilityCalculator(object):
         # busy cursor start
         self.update_button.config(state='disabled')
         self.progress.start()
-        with _busy_cursor(self.root):
-            aper = get_aperture(instrname, apername)
-            self.result = VisibilityCalculation(
-                ra,
-                dec,
-                [
-                    {'pa': pa1, 'separation': separation_as1},
-                    {'pa': pa2, 'separation': separation_as2},
-                    {'pa': pa3, 'separation': separation_as3},
-                ],
-                aper,
-                self.START_DATE,
-                npoints,
-                nrolls
-            )
-            self.result.calculate()
+        # with _busy_cursor(self.root):
+        aper = get_aperture(instrname, apername)
+        self.result = VisibilityCalculation(
+            ra,
+            dec,
+            [
+                {'pa': pa1, 'separation': separation_as1},
+                {'pa': pa2, 'separation': separation_as2},
+                {'pa': pa3, 'separation': separation_as3},
+            ],
+            aper,
+            self.START_DATE,
+            npoints,
+            nrolls
+        )
+        self.result.calculate()
 
-            self._clear_plot_overlay()
-            self._update_observability()
-            if self._pick_event_handler_id is None:
-                self._pick_event_handler_id = self.figure.canvas.mpl_connect('pick_event', self._on_pick)
-            self._update_detector()
-            self._canvas.draw()
+        self._clear_plot_overlay()
+        self._update_observability()
+        if self._pick_event_handler_id is None:
+            self._pick_event_handler_id = self.figure.canvas.mpl_connect('pick_event', self._on_pick)
+        self._update_detector()
+        self._canvas.draw()
 
         self.progress.stop()
         self.update_button.config(state='normal')
