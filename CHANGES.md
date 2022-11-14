@@ -1,5 +1,18 @@
 # Releases
 
+## 0.5.0
+
+### New Features 
+
+#### Repository
+
+ - Updated testing data
+ - Code changes to prepare for JWST Cycle 2 Call for Proposals
+
+### Bug Fixes
+
+ - Ended support for loading bar. The loading bar and busy cursor were causing the tool to hang and not update figures in the gui.
+
 ## 0.4.5 
 
 ### New Features 
