@@ -1398,10 +1398,10 @@ class VisibilityCalculator(object):
                 # The clear-aperture area for the Lyot is 272x272 pixels
 
                 width_arcsec = 0.72
-                x_verts = width_arcsec * np.array([-1, -1, 1, 1]) / 2
-                y_verts = np.array([min_y, max_y, max_y, min_y])
-                x_verts = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
-                y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+                x_verts0 = width_arcsec * np.array([-1, -1, 1, 1]) / 2
+                y_verts0 = np.array([min_y, max_y, max_y, min_y])
+                x_verts = np.cos(y_angle) * x_verts0 + np.sin(y_angle) * y_verts0
+                y_verts = -np.sin(y_angle) * x_verts0 + np.cos(y_angle) * y_verts0
 
                 verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
                 rectangular_part = Polygon(verts)
@@ -1414,7 +1414,7 @@ class VisibilityCalculator(object):
                 width_arcsec = 0.33
                 # David Law, personal communication, May 2016:
                 # The clear-aperture area for the 4QPM is 216x216 pixels
-                x_verts = np.array([
+                x_verts0 = np.array([
                     min_x,
                     -width_arcsec,
                     -width_arcsec,
@@ -1428,7 +1428,7 @@ class VisibilityCalculator(object):
                     -width_arcsec,
                     min_x
                 ])
-                y_verts = np.array([
+                y_verts0 = np.array([
                     width_arcsec,
                     width_arcsec,
                     max_y,
@@ -1442,8 +1442,8 @@ class VisibilityCalculator(object):
                     -width_arcsec,
                     -width_arcsec
                 ])
-                x_verts = np.cos(y_angle) * x_verts + np.sin(y_angle) * y_verts
-                y_verts = -np.sin(y_angle) * x_verts + np.cos(y_angle) * y_verts
+                x_verts = np.cos(y_angle) * x_verts0 + np.sin(y_angle) * y_verts0
+                y_verts = -np.sin(y_angle) * x_verts0 + np.cos(y_angle) * y_verts0
 
                 verts = np.concatenate([x_verts[:, np.newaxis], y_verts[:, np.newaxis]], axis=1)
                 mask_artists.append(Polygon(verts, alpha=0.5))
