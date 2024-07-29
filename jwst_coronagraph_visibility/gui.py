@@ -355,7 +355,9 @@ class VisibilityCalculator(object):
         'NRCA5_MASK335R',
         'NRCA5_MASK430R',
         'NRCA4_MASKSWB',
-        'NRCA5_MASKLWB'
+        'NRCA5_MASKLWB',
+        'NRCA4_MASKSWB_NARROW',
+        'NRCA5_MASKLWB_NARROW'
     ]
     NIRCAM_B_APERNAMES = [
         'NRCB1_MASK210R',
@@ -363,6 +365,9 @@ class VisibilityCalculator(object):
         'NRCB5_MASK430R',
         'NRCB3_MASKSWB',
         'NRCB5_MASKLWB',
+        'NRCB3_MASKSWB_NARROW',
+        'NRCB5_MASKLWB_NARROW',
+
     ]
     MIRI_APERNAMES = [
         'MIRIM_CORON1065',
@@ -1307,6 +1312,7 @@ class VisibilityCalculator(object):
 
         aperture = self.result.aperture
         aperture_name = aperture.AperName
+
         arcsec_per_pixel = np.average([aperture.XSciScale, aperture.YSciScale])
         x_sci_size, y_sci_size = aperture.XSciSize, aperture.YSciSize
         mask_artists = []
@@ -1363,7 +1369,9 @@ class VisibilityCalculator(object):
                 # make a circle
                 mask_artists.append(Circle((0, 0), radius=radius_arcsec, alpha=0.5))
             else:
-                x_verts = x_sci_size / 2 * np.array([-1, 1, 1, -1])
+                # The bar occulters are not uniform wedge shapes, but instead have some linear regions at either end
+                # See Krist et al. 2009, 2010 Proc. SPIE for details
+                x_verts = x_sci_size / 2 * np.array([-1, -0.75, 0.75, 1, 1, 0.75, -0.75, -1])
                 if 'LWB' in aperture_name:
                     thin_extent_arcsec = 0.58 * (2 / 4)
                     thick_extent_arcsec = 0.58 * (6 / 4)
@@ -1376,11 +1384,19 @@ class VisibilityCalculator(object):
 
                 y_verts = np.array([
                     thin_extent_arcsec / arcsec_per_pixel,
+                    thin_extent_arcsec / arcsec_per_pixel,
+                    thick_extent_arcsec / arcsec_per_pixel,
                     thick_extent_arcsec / arcsec_per_pixel,
                     -thick_extent_arcsec / arcsec_per_pixel,
+                    -thick_extent_arcsec / arcsec_per_pixel,
+                    -thin_extent_arcsec / arcsec_per_pixel,
                     -thin_extent_arcsec / arcsec_per_pixel
                 ])
                 x_idl_verts, y_idl_verts = aperture.sci_to_idl(x_verts + aperture.XSciRef, y_verts + aperture.YSciRef)
+                if 'LWB_NARROW' in aperture_name:
+                    x_idl_verts -= 8
+                elif 'SWB_NARROW' in aperture_name:
+                    x_idl_verts -= -8
                 verts = np.concatenate([x_idl_verts[:, np.newaxis], y_idl_verts[:, np.newaxis]], axis=1)
                 patch = Polygon(verts, alpha=0.5)
                 mask_artists.append(patch)
