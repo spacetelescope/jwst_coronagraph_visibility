@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish:
-    uses: spacetelescope/action-publish_to_pypi/.github/workflows/workflow.yml@master
+    uses: spacetelescope/action-publish_to_pypi/.github/workflows/workflow.yml@db1a5633a75b441416f9bf6790ae78fb5f3bf970  # 1.2.4
     with:
       test: false
       build_platform_wheels: false # Set to true if your package contains a C extension
